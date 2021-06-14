@@ -1,0 +1,27 @@
+{
+    "V_1": {
+        "capacity": 15,
+        "operation_time": 24,
+        "gps_id": "681162833e354d329df2b7aff119f015"
+    },
+    "V_2": {
+        "capacity": 15,
+        "operation_time": 24,
+        "gps_id": "81dc3e210b4449bf91d9874c26f173f0"
+    },
+    "V_3": {
+        "capacity": 15,
+        "operation_time": 24,
+        "gps_id": "d66f217d91dd4b43a32fb4984c74845d"
+    },
+    "V_4": {
+        "capacity": 15,
+        "operation_time": 24,
+        "gps_id": "cdcbb2960996475fb11a199d4226fc15"
+    },
+    "V_5": {
+        "capacity": 15,
+        "operation_time": 24,
+        "gps_id": "a1beabe727d34dba968e1a00f69d76ed"
+    }
+}

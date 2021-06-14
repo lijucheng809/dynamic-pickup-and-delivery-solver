@@ -1,0 +1,18 @@
+2021-06-13 17:08:06,636 [main.py         | 48] INFO: Start to run instance_1
+2021-06-13 17:08:06,636 [simulate_api.py | 60] INFO: Start time of the simulator: 2021-06-13 00:00:00, time interval:  600.00
+2021-06-13 17:08:06,648 [input_utils.py  | 48] INFO: Get 154 factories
+2021-06-13 17:08:08,243 [input_utils.py  | 52] INFO: Get 23562 routes
+2021-06-13 17:08:08,272 [input_utils.py  | 57] INFO: Get 5 vehicles
+2021-06-13 17:08:08,282 [input_utils.py  | 61] INFO: Get 50 orders
+2021-06-13 17:08:08,282 [simulate_api.py | 87] INFO: Initial position of V_1 is e2d5093fbe36431f8986ddb0e1c586be
+2021-06-13 17:08:08,285 [simulate_api.py | 87] INFO: Initial position of V_2 is 7fe14b93f0f04ee7a994ef5b2c1fdb72
+2021-06-13 17:08:08,285 [simulate_api.py | 87] INFO: Initial position of V_3 is fa366fc87a124d32926daa5bb093129f
+2021-06-13 17:08:08,285 [simulate_api.py | 87] INFO: Initial position of V_4 is e47399648fa842b2b8f80094343d8091
+2021-06-13 17:08:08,285 [simulate_api.py | 87] INFO: Initial position of V_5 is becb4f85393540b287e7329758b8d832
+2021-06-13 17:08:08,285 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 17:08:08,285 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:10:00, pre time: 2021-06-13 00:00:00
+2021-06-13 17:08:08,285 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:10:00
+2021-06-13 17:08:08,286 [simulate_environment.py | 163] INFO: Get 1 unallocated order items, 0 ongoing order items, 0 completed order items
+2021-06-13 17:08:09,237 [checker.py      | 35] ERROR: Num of returned destination 0 is not equal to vehicle number 5
+2021-06-13 17:08:09,237 [simulate_environment.py | 112] ERROR: Dispatch result is infeasible
+2021-06-13 17:08:09,241 [main.py         | 53] INFO: Score of instance_1: 9223372036854775807

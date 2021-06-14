@@ -1,0 +1,38 @@
+2021-06-13 22:12:09,910 [main.py         | 48] INFO: Start to run instance_1
+2021-06-13 22:12:09,911 [simulate_api.py | 60] INFO: Start time of the simulator: 2021-06-13 00:00:00, time interval:  600.00
+2021-06-13 22:12:09,923 [input_utils.py  | 48] INFO: Get 154 factories
+2021-06-13 22:12:11,488 [input_utils.py  | 52] INFO: Get 23562 routes
+2021-06-13 22:12:11,517 [input_utils.py  | 57] INFO: Get 5 vehicles
+2021-06-13 22:12:11,527 [input_utils.py  | 61] INFO: Get 50 orders
+2021-06-13 22:12:11,527 [simulate_api.py | 87] INFO: Initial position of V_1 is e2d5093fbe36431f8986ddb0e1c586be
+2021-06-13 22:12:11,529 [simulate_api.py | 87] INFO: Initial position of V_2 is 7fe14b93f0f04ee7a994ef5b2c1fdb72
+2021-06-13 22:12:11,529 [simulate_api.py | 87] INFO: Initial position of V_3 is fa366fc87a124d32926daa5bb093129f
+2021-06-13 22:12:11,529 [simulate_api.py | 87] INFO: Initial position of V_4 is e47399648fa842b2b8f80094343d8091
+2021-06-13 22:12:11,529 [simulate_api.py | 87] INFO: Initial position of V_5 is becb4f85393540b287e7329758b8d832
+2021-06-13 22:12:11,529 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 22:12:11,529 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:10:00, pre time: 2021-06-13 00:00:00
+2021-06-13 22:12:11,529 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:10:00
+2021-06-13 22:12:11,530 [simulate_environment.py | 163] INFO: Get 1 unallocated order items, 0 ongoing order items, 0 completed order items
+2021-06-13 22:12:12,465 [simulate_environment.py | 247] INFO: 2021-06-13 00:10:00, Item 0003480001-1: state = 1 < 2, we can not finish the simulation
+2021-06-13 22:12:12,465 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 22:12:12,465 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:20:00, pre time: 2021-06-13 00:10:00
+2021-06-13 22:12:12,465 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:20:00
+2021-06-13 22:12:12,477 [simulate_environment.py | 163] INFO: Get 3 unallocated order items, 0 ongoing order items, 0 completed order items
+2021-06-13 22:12:13,451 [simulate_environment.py | 247] INFO: 2021-06-13 00:20:00, Item 0003480001-1: state = 1 < 2, we can not finish the simulation
+2021-06-13 22:12:13,451 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 22:12:13,451 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:30:00, pre time: 2021-06-13 00:20:00
+2021-06-13 22:12:13,451 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:30:00
+2021-06-13 22:12:13,462 [simulate_environment.py | 163] INFO: Get 3 unallocated order items, 0 ongoing order items, 0 completed order items
+2021-06-13 22:12:14,405 [simulate_environment.py | 247] INFO: 2021-06-13 00:30:00, Item 0003480001-1: state = 1 < 2, we can not finish the simulation
+2021-06-13 22:12:14,406 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 22:12:14,406 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:40:00, pre time: 2021-06-13 00:30:00
+2021-06-13 22:12:14,406 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:40:00
+2021-06-13 22:12:14,414 [simulate_environment.py | 163] INFO: Get 9 unallocated order items, 0 ongoing order items, 0 completed order items
+2021-06-13 22:12:15,404 [simulate_environment.py | 247] INFO: 2021-06-13 00:40:00, Item 0003480001-1: state = 1 < 2, we can not finish the simulation
+2021-06-13 22:12:15,404 [simulate_environment.py | 96] INFO: **************************************************
+2021-06-13 22:12:15,404 [simulate_environment.py | 100] INFO: cur time: 2021-06-13 00:50:00, pre time: 2021-06-13 00:40:00
+2021-06-13 22:12:15,404 [simulate_environment.py | 136] INFO: Start to update the input of 2021-06-13 00:50:00
+2021-06-13 22:12:15,414 [simulate_environment.py | 163] INFO: Get 5 unallocated order items, 4 ongoing order items, 0 completed order items
+2021-06-13 22:12:16,407 [checker.py      | 75] ERROR: Vehicle V_2 violates the LIFO constraint
+2021-06-13 22:12:16,407 [simulate_environment.py | 112] ERROR: Dispatch result is infeasible
+2021-06-13 22:12:16,411 [main.py         | 53] INFO: Score of instance_1: 9223372036854775807
