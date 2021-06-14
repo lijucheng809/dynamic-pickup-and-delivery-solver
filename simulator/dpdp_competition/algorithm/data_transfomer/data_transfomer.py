@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 
 def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=3):
-    # TODO 三等分, 逻辑有问腿，需要改正
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
     q_small_split_num = len(request_item_map["q_small"]) // spilt_num
     q_box_split_num = len(request_item_map["q_box"]) // spilt_num
@@ -37,6 +36,13 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
                                                                                                         i + 1) * q_small_split_num]
             q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
                                                                       i * q_box_split_num:(i + 1) * q_box_split_num]
+            if i == 0:
+                if q_standard_split_num == 0 and request_item_map["q_standard"]:
+                    q_standard_items_id = request_item_map["q_standard"]
+                if q_small_split_num == 0 and request_item_map["q_small"]:
+                    q_small_items_id = request_item_map["q_small"]
+                if q_box_split_num == 0 and request_item_map["q_box"]:
+                    q_box_items_id = request_item_map["q_box"]
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
                                                    "q_small": q_small_items_id,
                                                    "q_box": q_box_items_id}
