@@ -1,3 +1,0 @@
-2021-06-13 21:39:37,414 [main.py         | 48] INFO: Start to run instance_1
-2021-06-13 21:39:37,414 [simulate_api.py | 60] INFO: Start time of the simulator: 2021-06-13 00:00:00, time interval:  600.00
-2021-06-13 21:39:37,452 [input_utils.py  | 48] INFO: Get 154 factories
