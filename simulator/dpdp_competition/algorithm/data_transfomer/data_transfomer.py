@@ -15,11 +15,11 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
         if i < spilt_num - 1:
             kid_q_standard_num_list[i] = q_standard_split_num
             kid_q_small_num_list[i] = q_small_split_num
-            kid_q_box_num_list = q_box_split_num
+            kid_q_box_num_list[i] = q_box_split_num
         else:
             kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - 2 * q_standard_split_num
             kid_q_small_num_list[i] = len(request_item_map["q_small"]) - 2 * q_small_split_num
-            kid_q_box_num_list = len(request_item_map["q_box"]) - 2 * q_box_split_num
+            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - 2 * q_box_split_num
     for i in range(spilt_num):
         kid_requestID = requestID + "-{}".format(i + 1)
         kid_requests[kid_requestID] = request
@@ -61,9 +61,9 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
         for item_id in kid_items:
             process_time += items_map[item_id]["load_time"]
         kid_requests[kid_requestID]["load/unload_time"] = process_time
-        kid_requests[kid_requestID]["demand"] = kid_requests[kid_requestID]["q_standard"] + \
-                                                kid_requests[kid_requestID]["q_small"] + \
-                                                kid_requests[kid_requestID]["q_box"]
+        kid_requests[kid_requestID]["demand"] = kid_requests[kid_requestID]["pallets"]["q_standard"] + \
+                                                kid_requests[kid_requestID]["pallets"]["q_small"] + \
+                                                kid_requests[kid_requestID]["pallets"]["q_box"]
     return {"kid_requests": kid_requests,
             "kid_request_item_map": kid_request_item_map}
 
@@ -76,17 +76,17 @@ def __demand_split(big_requests: set, requests: dict, items_map: dict, requests_
         new_requests = __gen_kid_request(requestID, requests[requestID], items_map, requests_items_map[requestID])
         requests.update(new_requests["kid_requests"])
         requests_items_map.update(new_requests["kid_request_item_map"])
-        for requestID in new_requests["kid_request_item_map"]:
-            for type in new_requests["kid_request_item_map"][requestID]:
-                for item_id in new_requests["kid_request_item_map"][requestID][type]:
-                    items_requests_map[item_id] = requestID
+        for request_id in new_requests["kid_request_item_map"]:
+            for tp in new_requests["kid_request_item_map"][request_id]:
+                for item_id in new_requests["kid_request_item_map"][request_id][tp]:
+                    items_requests_map[item_id] = request_id
         requests_items_map.pop(requestID)
         requests.pop(requestID)
 
 
 def __requests_sim_2_algo(vehicle_capacity=15):
     with open(
-            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\unallocated_order_items.json") as f:
+            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\unallocated_order_items.json") as f:
         orders = json.load(f)
     big_requests = set()
     requests_items_map = {}
@@ -224,11 +224,11 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
             if destination[vehicleID]["pickup_item_list"] or destination[vehicleID]["delivery_item_list"]:
                 del vehicle_route[vehicleID][0]
     with open(
-            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_destination.json",
+            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_destination.json",
             "w") as f:
         json.dump(destination, f, indent=4)
     with open(
-            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_route.json",
+            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_route.json",
             "w") as f:
         json.dump(vehicle_route, f, indent=4)
 

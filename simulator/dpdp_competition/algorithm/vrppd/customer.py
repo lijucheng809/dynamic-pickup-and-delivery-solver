@@ -64,7 +64,7 @@ class customer(object):
 
         if tip and node.rightNode and node.rightNode.customerID == node.customerID:
             tip = False
-            print(node.requestID, self._port_reserveTable[portID][queueNum].requestID)
+            # print(node.requestID, self._port_reserveTable[portID][queueNum].requestID)
             self._port_reserveTable[portID][queueNum] = node.rightNode
             self._node_port_map.pop(node.requestID)
             self._node_port_map[node.rightNode.requestID] = (portID, queueNum)
