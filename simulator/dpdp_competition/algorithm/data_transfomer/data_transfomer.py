@@ -86,7 +86,7 @@ def __demand_split(big_requests: set, requests: dict, items_map: dict, requests_
 
 def __requests_sim_2_algo(vehicle_capacity=15):
     with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\unallocated_order_items.json") as f:
+            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\unallocated_order_items.json") as f:
         orders = json.load(f)
     big_requests = set()
     requests_items_map = {}
@@ -98,10 +98,11 @@ def __requests_sim_2_algo(vehicle_capacity=15):
         items_map[item["id"]] = item
         if item["order_id"] not in requests:
             creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["creation_time"]))
-            latest_leave_time = (datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4))
+            # latest_leave_time = (datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4))
+            latest_leave_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["committed_completion_time"]))
             requests_items_map[item["order_id"]] = {"q_standard": [], "q_small": [], "q_box": []}
-            pickup_timeWindow = [creation_time, str(latest_leave_time)]
-            delivery_timeWindow = [creation_time, str(latest_leave_time)]
+            pickup_timeWindow = [creation_time, latest_leave_time]
+            delivery_timeWindow = [creation_time, latest_leave_time]
             pallets = {"q_standard": 0, "q_small": 0, "q_box": 0}
             demand = 0
             process_time = 0
@@ -223,11 +224,11 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
             if destination[vehicleID]["pickup_item_list"] or destination[vehicleID]["delivery_item_list"]:
                 del vehicle_route[vehicleID][0]
     with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_destination.json",
+            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_destination.json",
             "w") as f:
         json.dump(destination, f, indent=4)
     with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_route.json",
+            "C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_route.json",
             "w") as f:
         json.dump(vehicle_route, f, indent=4)
 

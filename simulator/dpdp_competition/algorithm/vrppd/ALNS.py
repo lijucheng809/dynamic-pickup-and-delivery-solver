@@ -79,7 +79,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 return destroy_weight_pair[0]
 
     def _removals(self, removals):
-
         removal_vehicleIDs = set()
         active_nodes = set()
         for pickup_node in removals:
@@ -153,14 +152,19 @@ class AdaptiveLargeNeighborhoodSearch(object):
                         if node.requestID in customer_object.get_node_port_map:
                             port_index = customer_object.get_node_port_map[node.requestID]
                             customer_object.getCurrentPortStatus[port_index[0]][port_index[1]] = node
-
         for node in active_nodes:
-            flag = feasibleRearrangePortAssignmentSchedule(self._customers, node.customerID, node, tp="destroy")
-            if not flag:
-                # print("ALNS destroy process fail!!!!!!!!!")
-                return False
-            else:
-                continue
+            if node in self._vehicles[node.vehicleID].getCurrentRoute:
+                flag = feasibleRearrangePortAssignmentSchedule(self._customers, node.customerID, node, tp="destroy")
+                if not flag:
+                    # print("ALNS destroy process fail!!!!!!!!!")
+                    return False
+                else:
+                    for customerID in self._customers:
+                        if self._customers[customerID].getDispatchedRequestSet:
+                            for requestID in self._customers[customerID].getDispatchedRequestSet:
+                                node_temp = self._customers[customerID].getDispatchedRequestSet[requestID]
+                                assert node_temp in self._vehicles[node_temp.vehicleID].getCurrentRoute
+                    continue
         return True
 
     def _destroy(self):
@@ -278,7 +282,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._customers = current_source_pool.customers
                 self._requests = current_source_pool.requests
                 continue
-
             if self._repair():
                 if self._SA_accept():
                     self._vehicles, self._customers, self._requests = self.repairOperator["engine"].outputSolution()
@@ -308,7 +311,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
             self._vehicles = current_source_pool.vehicles
             self._customers = current_source_pool.customers
             self._requests = current_source_pool.requests
-
             total_iteration_count += 1
             self._SA_temperature /= self._SA_cool_rate
 
@@ -325,10 +327,10 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._vehicles = source_pool_temp.vehicles
                 self._customers = source_pool_temp.customers
                 self._requests = source_pool_temp.requests
-            #
-            # print("iteration is: ", total_iteration_count,
-            #       " best score: ", self._bestSolution["score"],
-            #       " current score: ", self._currentSolution["score"])
+
+            print("iteration is: ", total_iteration_count,
+                  " best score: ", self._bestSolution["score"],
+                  " current score: ", self._currentSolution["score"])
 
     @property
     def outputSolution(self):

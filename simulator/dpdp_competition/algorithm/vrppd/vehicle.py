@@ -192,6 +192,7 @@ class vehicle(object):
         #     pass
         if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
             customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
+        assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
         flag = feasibleRearrangePortAssignmentSchedule(customers, customer_id, node)
         if flag:
             vehicle_node = self._route[node_index_in_route]

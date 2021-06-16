@@ -254,7 +254,7 @@ class GreedyInsertionOperator(insertOperator):
         demand_info = demand_type + "_demand_info"
         if datetime.strptime(request[demand_info]["time_window"][1], "%Y-%m-%d %H:%M:%S") < datetime.strptime(
                 request[demand_info]["time_window"][0], "%Y-%m-%d %H:%M:%S"):
-            latest_leave_time = datetime.strptime(request[demand_info]["time_window"][1], "%H:%M:%S") \
+            latest_leave_time = datetime.strptime(request[demand_info]["time_window"][1], "%Y-%m-%d %H:%M:%S") \
                                 + timedelta(days=1)
         else:
             latest_leave_time = datetime.strptime(request[demand_info]["time_window"][1], "%Y-%m-%d %H:%M:%S")
@@ -289,7 +289,6 @@ class GreedyInsertionOperator(insertOperator):
                              request,
                              route_index,
                              source_pool_temp):
-
         if not self._source_pool.vehicles[vehicleID].feasibleInsertion(self._source_pool.customers,
                                                                        customerID,
                                                                        demand_type,
@@ -315,15 +314,15 @@ class GreedyInsertionOperator(insertOperator):
         for k in range(1, pickup_route_index):
             if route[k].demandType == "pickup":
                 min_insert_index = min(min_insert_index, route.index(route[k].brotherNode))
-            if route[k].demandType == "delivery":
-                min_insert_index = min(min_insert_index, k)
-        if delivery_route_index > min_insert_index:
+        if delivery_route_index > min_insert_index and pickup_route_index != len(route)-1:
             return np.infty
 
         max_insert_index = -np.infty
         for k in range(pickup_route_index + 1, len(route)):
             if route[k].demandType == "pickup":
                 max_insert_index = max(max_insert_index, route.index(route[k].brotherNode))
+            elif not route[k].brotherNode and route[k].demandType == "delivery":
+                max_insert_index = min(min_insert_index, k)
         if delivery_route_index <= max_insert_index:
             return np.infty
         if max_insert_index == -np.infty and min_insert_index == np.infty and delivery_route_index != pickup_route_index + 1:
@@ -508,7 +507,7 @@ class GreedyInsertionOperator(insertOperator):
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         unDispatchedRequestsID_num = len(unDispatchedRequestsID_set)
         insertion_fail_count = 0
-        # print(unDispatchedRequestsID_set) 0038220005
+        # print(unDispatchedRequestsID_set)
         # unDispatchedRequestsID_set = ["0003480001", "0033520004", "0012230002", "0038220005", "0013570003"]
         # available_vehicleID_set = ['V_3', 'V_2', 'V_5', 'V_4', 'V_1']
         while len(unDispatchedRequestsID_set) > 0:

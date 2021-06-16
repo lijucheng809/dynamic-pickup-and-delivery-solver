@@ -155,11 +155,11 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 
 def scheduling():
     dvrppd_Solver = DVRPPD_Solver()
-    with open("C:\\Users\\Administrator\\Desktop\dpdp\\simulator\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
+    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
         customer_id_info_map = json.load(f)
-    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\vehicle_info.json", "r") as f:
+    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\vehicle_info.json", "r") as f:
         vehicles_info = json.load(f)
-    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\ongoing_order_items.json", "r") as f:
+    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\ongoing_order_items.json", "r") as f:
         ongoing_items = json.load(f)
     ongoing_items_map = {}
     for item in ongoing_items:
