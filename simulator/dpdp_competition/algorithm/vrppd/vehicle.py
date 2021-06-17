@@ -41,7 +41,7 @@ class vehicle(object):
         self._staticServeTimeOnCustomer = gConfig["static_process_time_on_customer"]
         self._currentTravelCost = 0
         self._update_time = None
-        self._mileage = 0
+        self._mileage = mileage
         # self._travelCost_solver = costDatabase()
 
     @property
