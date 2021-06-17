@@ -45,6 +45,10 @@ class solomonInsertionHeuristic(constructor):
             return False
 
     @property
+    def get_fail_insertion_requests(self):
+        return self._insertionOperator.get_fail_insertion_requests
+
+    @property
     def outputSolution(self):
         return self._insertionOperator.outputSolution()
 

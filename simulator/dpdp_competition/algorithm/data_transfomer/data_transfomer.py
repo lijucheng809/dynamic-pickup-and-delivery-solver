@@ -19,7 +19,7 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
         else:
             kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - 2 * q_standard_split_num
             kid_q_small_num_list[i] = len(request_item_map["q_small"]) - 2 * q_small_split_num
-            kid_q_box_num_list = len(request_item_map["q_box"]) - 2 * q_box_split_num
+            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - 2 * q_box_split_num
     for i in range(spilt_num):
         kid_requestID = requestID + "-{}".format(i + 1)
         kid_requests[kid_requestID] = request
@@ -76,10 +76,10 @@ def __demand_split(big_requests: set, requests: dict, items_map: dict, requests_
         new_requests = __gen_kid_request(requestID, requests[requestID], items_map, requests_items_map[requestID])
         requests.update(new_requests["kid_requests"])
         requests_items_map.update(new_requests["kid_request_item_map"])
-        for requestID in new_requests["kid_request_item_map"]:
-            for type in new_requests["kid_request_item_map"][requestID]:
-                for item_id in new_requests["kid_request_item_map"][requestID][type]:
-                    items_requests_map[item_id] = requestID
+        for request_id in new_requests["kid_request_item_map"]:
+            for tp in new_requests["kid_request_item_map"][request_id]:
+                for item_id in new_requests["kid_request_item_map"][request_id][tp]:
+                    items_requests_map[item_id] = request_id
         requests_items_map.pop(requestID)
         requests.pop(requestID)
 
@@ -98,8 +98,8 @@ def __requests_sim_2_algo(vehicle_capacity=15):
         items_map[item["id"]] = item
         if item["order_id"] not in requests:
             creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["creation_time"]))
-            # latest_leave_time = (datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4))
-            latest_leave_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["committed_completion_time"]))
+            latest_leave_time = str(datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=6))
+            # latest_leave_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["committed_completion_time"]))
             requests_items_map[item["order_id"]] = {"q_standard": [], "q_small": [], "q_box": []}
             pickup_timeWindow = [creation_time, latest_leave_time]
             delivery_timeWindow = [creation_time, latest_leave_time]

@@ -67,7 +67,10 @@ class ShawRemovalOperator(removeOperator):
                                         / (max_arriveTime - min_arriveTime)
                     self._vehicles[vehicleID].getCurrentRoute[i].setNormalArriveTime(arriveTime_normal)
                     if node.demandType == "pickup":
-                        volume_normal = (node.volume - min_volume) / (max_volume - min_volume)
+                        if max_volume == min_volume:
+                            volume_normal = 1
+                        else:
+                            volume_normal = (node.volume - min_volume) / (max_volume - min_volume)
                         self._vehicles[vehicleID].getCurrentRoute[i].setNormalVolume(volume_normal)
 
     @staticmethod
@@ -218,6 +221,11 @@ class GreedyInsertionOperator(insertOperator):
         for customerID in self._source_pool.customers:
             self._source_pool.customers[customerID].gen_node_port_map()
         self._travelCost_solver = travelCost_solver
+        self._fail_insertion_requests = []
+
+    @property
+    def get_fail_insertion_requests(self):
+        return self._fail_insertion_requests
 
     def _vehicle_customer_match(self):
         for vehicleID in self._source_pool.vehicles:
@@ -470,6 +478,7 @@ class GreedyInsertionOperator(insertOperator):
                                        j,
                                        pickup_customer_id,
                                        delivery_customer_id)
+            c11 += self._source_pool.vehicles[vehicleID].getMileage
             if best_score < c11 or c11 == np.infty:
                 continue
 
@@ -502,13 +511,13 @@ class GreedyInsertionOperator(insertOperator):
         return insertion_score_dict
 
     def insert(self,
-               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")) -> bool:
+               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               tp="constructor") -> bool:
         self._vehicle_customer_match()
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         unDispatchedRequestsID_num = len(unDispatchedRequestsID_set)
         insertion_fail_count = 0
         # print(unDispatchedRequestsID_set)
-        # unDispatchedRequestsID_set = ["0003480001", "0033520004", "0012230002", "0038220005", "0013570003"]
         # available_vehicleID_set = ['V_3', 'V_2', 'V_5', 'V_4', 'V_1']
         while len(unDispatchedRequestsID_set) > 0:
             # insertion_flag = False  # 判断是否插入成功
@@ -522,7 +531,7 @@ class GreedyInsertionOperator(insertOperator):
                 #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
 
                 source_pool_temp = deepcopy(self._source_pool)
-                # random.shuffle(available_vehicleID_set)
+                random.shuffle(available_vehicleID_set)
                 insertion_flag = False  # 判断是否插入成功
                 insertion_score_dict = dict()
                 best_score = np.infty
@@ -551,6 +560,7 @@ class GreedyInsertionOperator(insertOperator):
                             continue
 
                         c11 = travel_cost_depot2pickup["distance"] + travel_cost_pickup2delivery["distance"]
+                        c11 += self._source_pool.vehicles[vehicleID].getMileage
                         if best_score < c11:
                             continue
                         if not self._insertion_constrain(vehicleID,
@@ -674,14 +684,16 @@ class GreedyInsertionOperator(insertOperator):
 
                 else:
                     """需求分配失败"""
-                    print("insertion fail!! ", requestID)
+                    # print("insertion fail!! ", requestID)
+                    self._fail_insertion_requests.append({requestID:
+                                                              self._source_pool.requests.getUnDispatchedPool[requestID]})
+                    unDispatchedRequestsID_set.remove(requestID)
+                    source_pool_temp.requests.getUnDispatchedPool.pop(requestID)
                     self._source_pool = deepcopy(source_pool_temp)
                     self._vehicle_customer_match()
-                    if insertion_fail_count < unDispatchedRequestsID_num * unDispatchedRequestsID_num:
-                        insertion_fail_count += 1
-                        continue
-                    else:
-                        return False
+        if self._fail_insertion_requests:
+            # print(self._fail_insertion_requests)
+            return False
         return True
 
     @property
@@ -690,6 +702,7 @@ class GreedyInsertionOperator(insertOperator):
         for vehicleID in self._source_pool.vehicles:
             self._source_pool.vehicles[vehicleID].updateTravelCost(self._travelCost_solver)
             score += self._source_pool.vehicles[vehicleID].getCurrentRouteCost
+            score -= self._source_pool.vehicles[vehicleID].getMileage
         return score
 
     def outputSolution(self):

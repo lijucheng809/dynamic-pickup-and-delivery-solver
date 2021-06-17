@@ -90,6 +90,7 @@ class DVRPPD_Solver(object):
         """
         所有requests都要得到分配，并且所有route要满足时间窗，载重等约束条件
         """
+        # TODO 需要完善如果插入失败后的预备方案
         for vehicleID in self._vehiclesPool:
             if not self._scheduleNormal(vehicleID) or not self._currentRouteFeasible(vehicleID):
                 self._rearrangeRoute(vehicleID)
@@ -102,34 +103,45 @@ class DVRPPD_Solver(object):
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             for customerID in self._customersPool:
                 self._customersPool[customerID].gen_node_port_map()
+            self._gen_object_score()
             # self._print_solution()
             # checker(self._vehiclesPool)
-            # self._print_solution()
             return True
         else:
-            return False
+            self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
+            fail_insertion_requests = constructor.get_fail_insertion_requests
+            if fail_insertion_requests:
+                for requests_info in fail_insertion_requests:
+                    self.addNewRequest2RequestsPool(requests_info)
+            self.heuristicEngine(CPU_limit=2)
+            constructor = solomonInsertionHeuristic(self._vehiclesPool,
+                                                    self._requestsPool,
+                                                    self._customersPool,
+                                                    self._travelCost_solver)
+            if constructor.solve():
+                return True
+        return False
 
-    def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")):
+    def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"), CPU_limit=10):
         heuristicSolver = AdaptiveLargeNeighborhoodSearch(self._vehiclesPool,
                                                           self._requestsPool,
                                                           self._customersPool,
                                                           self.objective_score,
                                                           self._travelCost_solver,
                                                           time2Go=time2Go)
-        heuristicSolver.solve(50)
+        heuristicSolver.solve(CPU_limit)
         solution = heuristicSolver.outputSolution
         self._vehiclesPool = solution["source_pool"].vehicles
         self._requestsPool = solution["source_pool"].requests
         self._customersPool = solution["source_pool"].customers
-        # self._print_solution()
 
     def _print_solution(self):
-        self.objective_score = 0
+        objective_score = 0
         score_temp = 0
         for vehicleID in self._vehiclesPool:
             if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
                 self._vehiclesPool[vehicleID].updateTravelCost(self._travelCost_solver)
-                self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
+                objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
                 for index, node in enumerate(self._vehiclesPool[vehicleID].getCurrentRoute):
                     if index == 0:
                         print("vehicleID: ", vehicleID,
@@ -153,7 +165,7 @@ class DVRPPD_Solver(object):
                               "leave_time:", node.vehicleDepartureTime,
                               "travel_time: ", dis["travel_time"] / 60.,
                               "dis: ", dis["distance"])
-        print("score is:", self.objective_score)
+        print("score is:", objective_score)
         for customerID in self._customersPool:
             ports = self._customersPool[customerID].getCurrentPortStatus
             for index, port in enumerate(ports):
@@ -168,6 +180,14 @@ class DVRPPD_Solver(object):
                               "leave_time is:", node.vehicleDepartureTime, "]",
                               end=" ")
                     print()
+
+    def _gen_object_score(self):
+        self.objective_score = 0
+        for vehicleID in self._vehiclesPool:
+            if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
+                self._vehiclesPool[vehicleID].updateTravelCost(self._travelCost_solver)
+                self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
+
 
     def foliumPlot(self, customer_id_info_map):
         vehicle_node_map = dict()

@@ -6,6 +6,7 @@ from simulator.dpdp_competition.algorithm.vrppd.customer import customer
 from simulator.dpdp_competition.algorithm.vrppd.DVRPPDSolver import DVRPPD_Solver
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
+from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
 
 import simulator.dpdp_competition.algorithm.vrppd.getConfig
 gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
@@ -115,6 +116,11 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             requests_items_map_temp = {}
             carrying_items = vehicle_info["carrying_items"]
             request_id_on_order = []    # 存放将来生成固定线路的node顺序
+            mileage = 0
+            if vehicle_info["cur_factory_id"] and vehicle_info["destination"]:
+                travel_cost = costDatabase().getTravelCost(vehicle_info["cur_factory_id"],
+                                                           vehicle_info["destination"]["factory_id"])
+                mileage = -travel_cost["distance"]
             for item_id in carrying_items:
                 order_id = ongoing_items_map[item_id]["order_id"]
                 order_id_temp = order_id
@@ -140,7 +146,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             arrive_time = datetime.strptime(arrive_time, "%Y-%m-%d %H:%M:%S")
             customerID = vehicle_info["destination"]["factory_id"]
             position = [customer_id_info_map[customerID]["lng"], customer_id_info_map[customerID]["lat"]]
-            vehicleObject = vehicle(vehicleID, capacity, position, customerID)
+            vehicleObject = vehicle(vehicleID, capacity, position, customerID, mileage=mileage)
             vehicleObject.activateVehicle(volume=load_volume)
             vehicleObject.getCurrentRoute[0].setVehicleArriveTime(arrive_time)
             vehicleObject.getCurrentRoute[0].setVehicleDepartureTime(arrive_time)
@@ -149,11 +155,13 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                                                    request_id_on_order,
                                                                    ongoing_items_map,
                                                                    requests_items_map)
+
     request_info["requests_items_map"].update(requests_items_map)
     return next_period_vehicle_go_time
 
 
 def scheduling():
+    start_time = time.time()
     dvrppd_Solver = DVRPPD_Solver()
     with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
         customer_id_info_map = json.load(f)
@@ -173,7 +181,9 @@ def scheduling():
     # print(time_2_go)
     # print(request_info["requests"])
     dvrppd_Solver.constructEngine(time2Go=time_2_go)
-    dvrppd_Solver.heuristicEngine(time2Go=time_2_go)
+    middle_tim = time.time()
+    left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim-start_time)/60. - 0.5  # 留0.5秒输出数据
+    dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool

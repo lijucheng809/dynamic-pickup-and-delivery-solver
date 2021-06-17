@@ -1,3 +1,4 @@
+import time
 from typing import Dict
 import numpy as np
 from copy import deepcopy
@@ -25,7 +26,8 @@ class AdaptiveLargeNeighborhoodSearch(object):
                  customers: Dict[str, customer],
                  objective_score: float,
                  travelCost_solver: costDatabase,
-                 time2Go):
+                 time2Go,
+                 start_time = time.time()):
         self._source_pool = deepcopy(sourcePool(vehicles, customers, requests))
         self._customers = self._source_pool.customers
         self._requests = self._source_pool.requests
@@ -35,7 +37,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
                               "source_pool": deepcopy(self._source_pool)}
         self._currentSolution = {"score": objective_score,
                                  "source_pool": deepcopy(self._source_pool)}
-
+        self._start_time = start_time
         self.removeOperator = dict()
         self.repairOperator = dict()
         self._destroyOperator_paras = {"shaw": {"weight": 1, "score": 0, "trials": 0},
@@ -181,7 +183,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         if removeRequest_number > total_requests:
             removeRequest_number = total_requests
         # print(removeRequest_number)
-        destroyID = self._chooseOperator(self._destroyOperator_paras)
+        # destroyID = self._chooseOperator(self._destroyOperator_paras)
         destroyID = "random"
         if destroyID == "shaw":
             self.removeOperator = {"engine": ShawRemovalOperator(self._vehicles),
@@ -217,7 +219,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
                                    "engineID": "regret"}
             self._repairOperator_paras["regret"]["trials"] += 1
         # print("repairID is: ", self.repairOperator["engineID"])
-        flag = self.repairOperator["engine"].insert(time2Go=self._time_2_go)
+        flag = self.repairOperator["engine"].insert(time2Go=self._time_2_go, tp="heuristic")
         # assert flag == True
         if not flag:
             # print("执行失败的算子是: ", self.repairOperator["engineID"])
@@ -267,12 +269,13 @@ class AdaptiveLargeNeighborhoodSearch(object):
             else:
                 return False
 
-    def solve(self, stop_criterion: int):
+    def solve(self, CPU_limit=10):
         total_iteration_count = 0
         none_improve_iteration_count = 0
         last_current_score = None
         source_pool_init = deepcopy(self._source_pool)
-        while total_iteration_count < stop_criterion:
+        while time.time() - self._start_time < CPU_limit * 60:
+            # print("iter:", total_iteration_count, "--------------------------------------")
             if total_iteration_count % gConfig["alns_segment_size"] == 0:
                 self._resetOperatorsParas()
 
@@ -327,10 +330,10 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._vehicles = source_pool_temp.vehicles
                 self._customers = source_pool_temp.customers
                 self._requests = source_pool_temp.requests
-
-            print("iteration is: ", total_iteration_count,
-                  " best score: ", self._bestSolution["score"],
-                  " current score: ", self._currentSolution["score"])
+            #
+            # print("iteration is: ", total_iteration_count,
+            #       " best score: ", self._bestSolution["score"],
+            #       " current score: ", self._currentSolution["score"])
 
     @property
     def outputSolution(self):
