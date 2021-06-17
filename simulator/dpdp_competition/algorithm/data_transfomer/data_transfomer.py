@@ -98,8 +98,8 @@ def __requests_sim_2_algo(vehicle_capacity=15):
         items_map[item["id"]] = item
         if item["order_id"] not in requests:
             creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["creation_time"]))
-            # latest_leave_time = (datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4))
-            latest_leave_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["committed_completion_time"]))
+            latest_leave_time = str(datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S") + timedelta(hours=6))
+            # latest_leave_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item["committed_completion_time"]))
             requests_items_map[item["order_id"]] = {"q_standard": [], "q_small": [], "q_box": []}
             pickup_timeWindow = [creation_time, latest_leave_time]
             delivery_timeWindow = [creation_time, latest_leave_time]

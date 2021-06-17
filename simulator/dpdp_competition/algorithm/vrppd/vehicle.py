@@ -19,7 +19,8 @@ class vehicle(object):
                  position,
                  gps_id,
                  currentVolume=0,
-                 status='off_duty'):
+                 status='off_duty',
+                 mileage=0):
         """
         :param vehicleID:
         :param capacity:
@@ -40,7 +41,12 @@ class vehicle(object):
         self._staticServeTimeOnCustomer = gConfig["static_process_time_on_customer"]
         self._currentTravelCost = 0
         self._update_time = None
+        self._mileage = 0
         # self._travelCost_solver = costDatabase()
+
+    @property
+    def getMileage(self):
+        return self._mileage
 
     @property
     def getUpdateTime(self):
