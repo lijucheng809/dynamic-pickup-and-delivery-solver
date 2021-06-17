@@ -330,7 +330,7 @@ class GreedyInsertionOperator(insertOperator):
             if route[k].demandType == "pickup":
                 max_insert_index = max(max_insert_index, route.index(route[k].brotherNode))
             elif not route[k].brotherNode and route[k].demandType == "delivery":
-                max_insert_index = min(min_insert_index, k)
+                max_insert_index = min(max_insert_index, k)
         if delivery_route_index <= max_insert_index:
             return np.infty
         if max_insert_index == -np.infty and min_insert_index == np.infty and delivery_route_index != pickup_route_index + 1:
@@ -517,7 +517,7 @@ class GreedyInsertionOperator(insertOperator):
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         unDispatchedRequestsID_num = len(unDispatchedRequestsID_set)
         insertion_fail_count = 0
-        # print(unDispatchedRequestsID_set)
+        print(unDispatchedRequestsID_set)
         # available_vehicleID_set = ['V_3', 'V_2', 'V_5', 'V_4', 'V_1']
         while len(unDispatchedRequestsID_set) > 0:
             # insertion_flag = False  # 判断是否插入成功
@@ -526,7 +526,7 @@ class GreedyInsertionOperator(insertOperator):
             # random.shuffle(unDispatchedRequestsID_set)
             for requestID in unDispatchedRequestsID_set:
                 request = self._source_pool.requests.getUnDispatchedPool[requestID]
-                # print("当前需要决定的requestID:", requestID)
+                print("当前需要决定的requestID:", requestID)
                 #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],
                 #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
 
