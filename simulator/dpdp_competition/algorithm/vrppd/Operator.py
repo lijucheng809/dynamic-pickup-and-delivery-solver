@@ -4,6 +4,7 @@ from typing import Dict, List
 from datetime import datetime, timedelta
 import numpy as np
 from copy import deepcopy
+import sys
 
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
@@ -530,6 +531,7 @@ class GreedyInsertionOperator(insertOperator):
             for requestID in unDispatchedRequestsID_set:
                 request = self._source_pool.requests.getUnDispatchedPool[requestID]
                 # print("当前需要决定的requestID:", requestID)
+                # print(unDispatchedRequestsID_set)
                 #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],
                 #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
 
@@ -687,7 +689,7 @@ class GreedyInsertionOperator(insertOperator):
 
                 else:
                     """需求分配失败"""
-                    # print("insertion fail!! ", requestID)
+                    print("insertion fail!! ", requestID, file=sys.stderr)
                     self._fail_insertion_requests.append({requestID:
                                                               self._source_pool.requests.getUnDispatchedPool[requestID]})
                     unDispatchedRequestsID_set.remove(requestID)

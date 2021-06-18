@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime, timedelta
 import time
 
@@ -183,7 +184,8 @@ def scheduling():
     dvrppd_Solver.constructEngine(time2Go=time_2_go)
     middle_tim = time.time()
     left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim-start_time)/60. - 0.5  # 留0.5秒输出数据
-    # dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    if len(request_info["requests"]) > 10:
+        dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
@@ -192,7 +194,6 @@ def scheduling():
                                           request_info["requests_items_map"],
                                           vehicles_info_map,
                                           ongoing_items)
-    print("SUCCESS")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 import math
 from datetime import datetime, timedelta
+import sys
 
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.vrppd.customer import customer
@@ -274,6 +275,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         none_improve_iteration_count = 0
         last_current_score = None
         source_pool_init = deepcopy(self._source_pool)
+        print("init score is:", self._bestSolution["score"], file=sys.stderr)
         while time.time() - self._start_time < CPU_limit * 60:
             # print("iter:", total_iteration_count, "--------------------------------------")
             if total_iteration_count % gConfig["alns_segment_size"] == 0:
@@ -334,7 +336,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
             # print("iteration is: ", total_iteration_count,
             #       " best score: ", self._bestSolution["score"],
             #       " current score: ", self._currentSolution["score"])
-
+        print("ALNS score is:", self._bestSolution["score"], file=sys.stderr)
     @property
     def outputSolution(self):
         return self._bestSolution

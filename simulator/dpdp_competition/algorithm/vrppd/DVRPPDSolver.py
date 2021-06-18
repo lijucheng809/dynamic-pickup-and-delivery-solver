@@ -2,6 +2,7 @@ import folium
 import numpy as np
 import webbrowser as wb
 from datetime import datetime, timedelta
+import sys
 
 from simulator.dpdp_competition.algorithm.vrppd.requestPool import requestPool
 from simulator.dpdp_competition.algorithm.vrppd.constructor import solomonInsertionHeuristic
@@ -104,7 +105,7 @@ class DVRPPD_Solver(object):
             for customerID in self._customersPool:
                 self._customersPool[customerID].gen_node_port_map()
             self._gen_object_score()
-            # self._print_solution()
+            self._print_solution()
             # checker(self._vehiclesPool)
             return True
         else:
@@ -149,7 +150,7 @@ class DVRPPD_Solver(object):
                               "demandType:  ", node.demandType,
                               "customerID: ", node.customerID,
                               "     arrive_time:", node.vehicleArriveTime,
-                              "leave_time:", node.vehicleDepartureTime)
+                              "leave_time:", node.vehicleDepartureTime, file=sys.stderr)
                     else:
                         dis = self._travelCost_solver.getTravelCost(
                             self._vehiclesPool[
@@ -164,22 +165,22 @@ class DVRPPD_Solver(object):
                               "     arrive_time:", node.vehicleArriveTime,
                               "leave_time:", node.vehicleDepartureTime,
                               "travel_time: ", dis["travel_time"] / 60.,
-                              "dis: ", dis["distance"])
-        print("score is:", objective_score)
-        for customerID in self._customersPool:
-            ports = self._customersPool[customerID].getCurrentPortStatus
-            for index, port in enumerate(ports):
-                if len(port) > 0:
-                    print("customerID is:", customerID,
-                          "port ID is:", index,
-                          end=" ")
-                    for node in port:
-                        print("[vehicleID is:", node.vehicleID,
-                              "requestID is ", node.requestID,
-                              "   arrive_time is:", node.vehicleArriveTime,
-                              "leave_time is:", node.vehicleDepartureTime, "]",
-                              end=" ")
-                    print()
+                              "dis: ", dis["distance"], file=sys.stderr)
+        # print("score is:", objective_score)
+        # for customerID in self._customersPool:
+        #     ports = self._customersPool[customerID].getCurrentPortStatus
+        #     for index, port in enumerate(ports):
+        #         if len(port) > 0:
+        #             print("customerID is:", customerID,
+        #                   "port ID is:", index,
+        #                   end=" ")
+        #             for node in port:
+        #                 print("[vehicleID is:", node.vehicleID,
+        #                       "requestID is ", node.requestID,
+        #                       "   arrive_time is:", node.vehicleArriveTime,
+        #                       "leave_time is:", node.vehicleDepartureTime, "]",
+        #                       end=" ")
+        #             print()
 
     def _gen_object_score(self):
         self.objective_score = 0
