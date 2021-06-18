@@ -146,7 +146,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             arrive_time = datetime.strptime(arrive_time, "%Y-%m-%d %H:%M:%S")
             customerID = vehicle_info["destination"]["factory_id"]
             position = [customer_id_info_map[customerID]["lng"], customer_id_info_map[customerID]["lat"]]
-            vehicleObject = vehicle(vehicleID, capacity, position, customerID, mileage=mileage)
+            vehicleObject = vehicle(vehicleID, capacity, position, customerID, mileage=0)
             vehicleObject.activateVehicle(volume=load_volume)
             vehicleObject.getCurrentRoute[0].setVehicleArriveTime(arrive_time)
             vehicleObject.getCurrentRoute[0].setVehicleDepartureTime(arrive_time)
@@ -183,7 +183,7 @@ def scheduling():
     dvrppd_Solver.constructEngine(time2Go=time_2_go)
     middle_tim = time.time()
     left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim-start_time)/60. - 0.5  # 留0.5秒输出数据
-    dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    # dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
