@@ -1,6 +1,7 @@
 import json
 import time
 from datetime import datetime, timedelta
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=3):
@@ -85,8 +86,7 @@ def __demand_split(big_requests: set, requests: dict, items_map: dict, requests_
 
 
 def __requests_sim_2_algo(vehicle_capacity=15):
-    with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\simulator\\dpdp_competition\\algorithm\\data_interaction\\unallocated_order_items.json") as f:
+    with open(configs.unallocated_order_items_path) as f:
         orders = json.load(f)
     big_requests = set()
     requests_items_map = {}
@@ -223,13 +223,9 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
         if len(vehicle_route[vehicleID]) > 0:
             if destination[vehicleID]["pickup_item_list"] or destination[vehicleID]["delivery_item_list"]:
                 del vehicle_route[vehicleID][0]
-    with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_destination.json",
-            "w") as f:
+    with open(configs.output_destination_path, "w") as f:
         json.dump(destination, f, indent=4)
-    with open(
-            "C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\output_route.json",
-            "w") as f:
+    with open(configs.output_route_path, "w") as f:
         json.dump(vehicle_route, f, indent=4)
 
 

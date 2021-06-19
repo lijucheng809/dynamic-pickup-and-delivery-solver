@@ -528,7 +528,7 @@ class GreedyInsertionOperator(insertOperator):
             # best_score = np.infty
             requestID = minpq_unDispatched_request.get()[1]
             request = self._source_pool.requests.getUnDispatchedPool[requestID]
-            # print("requestID:", requestID, "creation_time:", request["creation_time"])
+            print("requestID:", requestID, "creation_time:", request["creation_time"])
             # print("当前需要决定的requestID:", requestID)
             # print(unDispatchedRequestsID_set)
             #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],

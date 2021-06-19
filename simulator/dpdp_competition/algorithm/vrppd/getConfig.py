@@ -1,7 +1,8 @@
 import configparser
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-def get_config(config_file="C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\vrppd\\config\\config.ini"):
+def get_config(config_file=configs.config_ini_path):
     parser = configparser.ConfigParser()
     parser.read(config_file)
     _conf_ints = [(key, int(value)) for key, value in parser.items('ints')]

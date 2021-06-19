@@ -8,9 +8,10 @@ from simulator.dpdp_competition.algorithm.vrppd.DVRPPDSolver import DVRPPD_Solve
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
 from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.vrppd.utlis import fileProcessor
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 import simulator.dpdp_competition.algorithm.vrppd.getConfig
+
 gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
 
 
@@ -99,7 +100,8 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
         position = None
         if vehicle_info["cur_factory_id"] and vehicle_info["cur_factory_id"] not in dvrppd_Solver.getCustomerPool:
             __gen_customer_object(dvrppd_Solver, vehicle_info["cur_factory_id"], customer_id_info_map)
-        if vehicle_info["destination"] and vehicle_info["destination"]["factory_id"] not in dvrppd_Solver.getCustomerPool:
+        if vehicle_info["destination"] and vehicle_info["destination"][
+            "factory_id"] not in dvrppd_Solver.getCustomerPool:
             __gen_customer_object(dvrppd_Solver, vehicle_info["destination"]["factory_id"], customer_id_info_map)
         if not vehicle_info["destination"] and not vehicle_info["carrying_items"]:
             leave_time = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -118,7 +120,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             load_volume = 0
             requests_items_map_temp = {}
             carrying_items = vehicle_info["carrying_items"]
-            request_id_on_order = []    # 存放将来生成固定线路的node顺序
+            request_id_on_order = []  # 存放将来生成固定线路的node顺序
             mileage = 0
             if vehicle_info["cur_factory_id"] and vehicle_info["destination"]:
                 travel_cost = costDatabase().getTravelCost(vehicle_info["cur_factory_id"],
@@ -166,11 +168,11 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 def scheduling():
     start_time = time.time()
     dvrppd_Solver = DVRPPD_Solver()
-    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
+    with open(configs.customer_info_path,  "r") as f:
         customer_id_info_map = json.load(f)
-    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\vehicle_info.json", "r") as f:
+    with open(configs.vehicle_info_path, "r") as f:
         vehicles_info = json.load(f)
-    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\ongoing_order_items.json", "r") as f:
+    with open(configs.ongoing_items_path, "r") as f:
         ongoing_items = json.load(f)
     ongoing_items_map = {}
     for item in ongoing_items:
@@ -185,7 +187,7 @@ def scheduling():
     # print(request_info["requests"])
     dvrppd_Solver.constructEngine(time2Go=time_2_go)  # 构造解
     middle_tim = time.time()
-    left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim-start_time)/60. - 0.5  # 留0.5秒输出数据
+    left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim - start_time) / 60. - 0.5  # 留0.5秒输出数据
     if len(request_info["requests"]) > 5:
         dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
