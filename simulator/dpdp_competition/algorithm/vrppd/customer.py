@@ -216,7 +216,7 @@ class customer(object):
                 indexes = q_dispatchedNode.get()
                 pre_node = self._port_reserveTable[indexes[1]][-1]
                 if pre_node.vehicleDepartureTime > node.vehicleArriveTime:
-                    print("开始产生等待的时间")
+                    # print("开始产生等待的时间")
                     node_departure_time = pre_node.vehicleDepartureTime + \
                                           timedelta(seconds=(earliestDepartureTime - node.vehicleArriveTime).seconds)
                 else:
@@ -248,7 +248,7 @@ class customer(object):
                     self._port_reserveTable[indexes[1]].append(node)
                     q_dispatchedNode.put((node.vehicleDepartureTime, indexes[1]))
                 else:
-                    print("等待时间过长-------------------------------")
+                    # print("等待时间过长-------------------------------")
                     return None
 
         self.gen_node_port_map()

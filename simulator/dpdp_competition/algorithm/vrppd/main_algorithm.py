@@ -8,6 +8,7 @@ from simulator.dpdp_competition.algorithm.vrppd.DVRPPDSolver import DVRPPD_Solve
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
 from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.vrppd.utlis import fileProcessor
 
 import simulator.dpdp_competition.algorithm.vrppd.getConfig
 gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
@@ -44,7 +45,8 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
             deliveryCustomerObject = dvrppd_Solver.getCustomerObject(
                 order_id_info_map[orderID]["delivery_customer_id"])
         # demandInfo: creation_time, demandType, volume, brotherCustomer, timeWindow, finishTime, matchedVehicle
-        pickupDemandInfo = {"creation_time": order_id_info_map[orderID]["creation_time"],
+        creation_time = datetime.strptime(order_id_info_map[orderID]["creation_time"], "%Y-%m-%d %H:%M:%S")
+        pickupDemandInfo = {"creation_time": creation_time,
                             "customer_id": order_id_info_map[orderID]["pickup_customer_id"],
                             "demand_type": "pickup",
                             "volume": (order_id_info_map[orderID]["pallets"]["q_standard"] +
@@ -55,7 +57,7 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
                             "process_time": order_id_info_map[orderID]["load/unload_time"],
                             "finish_time": None,
                             "matchedVehicle": None}
-        deliveryDemandInfo = {"creation_time": order_id_info_map[orderID]["creation_time"],
+        deliveryDemandInfo = {"creation_time": creation_time,
                               "customer_id": order_id_info_map[orderID]["delivery_customer_id"],
                               "demand_type": "delivery",
                               "volume": -(order_id_info_map[orderID]["pallets"]["q_standard"] +
@@ -164,11 +166,11 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 def scheduling():
     start_time = time.time()
     dvrppd_Solver = DVRPPD_Solver()
-    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
+    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data\\dynamic_pickup_and_delivery_testdata\\customer\\customer_info.json") as f:
         customer_id_info_map = json.load(f)
-    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\vehicle_info.json", "r") as f:
+    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\vehicle_info.json", "r") as f:
         vehicles_info = json.load(f)
-    with open("C:\\Users\\DELL\\Desktop\\dynamic-pickup-and-delivery-solver\\simulator\\dpdp_competition\\algorithm\\data_interaction\\ongoing_order_items.json", "r") as f:
+    with open("C:\\Users\\Administrator\\Desktop\\dpdp\\simulator\\dpdp_competition\\algorithm\\data_interaction\\ongoing_order_items.json", "r") as f:
         ongoing_items = json.load(f)
     ongoing_items_map = {}
     for item in ongoing_items:
@@ -181,10 +183,10 @@ def scheduling():
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map, request_info)
     # print(time_2_go)
     # print(request_info["requests"])
-    dvrppd_Solver.constructEngine(time2Go=time_2_go)
+    dvrppd_Solver.constructEngine(time2Go=time_2_go)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim-start_time)/60. - 0.5  # 留0.5秒输出数据
-    if len(request_info["requests"]) > 10:
+    if len(request_info["requests"]) > 5:
         dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool

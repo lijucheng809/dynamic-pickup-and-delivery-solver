@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import numpy as np
 from copy import deepcopy
 import sys
+from queue import PriorityQueue
 
 from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
@@ -241,18 +242,19 @@ class GreedyInsertionOperator(insertOperator):
                             customer_object.getCurrentPortStatus[port_index[0]][port_index[1]] = node
 
     def _getResource(self):
+        minpq_unDispatched_request = PriorityQueue()
         available_vehicleID_set = []
-        unDispatchedRequestsID_set = []
         for requestID in self._source_pool.requests.getUnDispatchedPool:
-            unDispatchedRequestsID_set.append(requestID)
+            creation_time = self._source_pool.requests.getUnDispatchedPool[requestID]["creation_time"]
+            minpq_unDispatched_request.put((creation_time, requestID))
         for vehicleID in self._source_pool.vehicles:
             if self._source_pool.vehicles[vehicleID].getStatus == "busy" or self._source_pool.vehicles[vehicleID].getStatus == "idle":
                 available_vehicleID_set.append(vehicleID)
             else:
                 continue
+
         random.shuffle(available_vehicleID_set)
-        random.shuffle(unDispatchedRequestsID_set)
-        return available_vehicleID_set, unDispatchedRequestsID_set
+        return available_vehicleID_set, minpq_unDispatched_request
 
     def _time_window_constrain(self,
                                pre_node: customer_request_combination,
@@ -518,184 +520,182 @@ class GreedyInsertionOperator(insertOperator):
                time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                tp="constructor") -> bool:
         self._vehicle_customer_match()
-        available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
-        unDispatchedRequestsID_num = len(unDispatchedRequestsID_set)
-        insertion_fail_count = 0
+        available_vehicleID_set, minpq_unDispatched_request = self._getResource()
         # print(unDispatchedRequestsID_set)
-        # available_vehicleID_set = ['V_3', 'V_2', 'V_5', 'V_4', 'V_1']
-        while len(unDispatchedRequestsID_set) > 0:
+        while not minpq_unDispatched_request.empty():
             # insertion_flag = False  # 判断是否插入成功
             # insertion_score_dict = dict()
             # best_score = np.infty
-            # random.shuffle(unDispatchedRequestsID_set)
-            for requestID in unDispatchedRequestsID_set:
-                request = self._source_pool.requests.getUnDispatchedPool[requestID]
-                # print("当前需要决定的requestID:", requestID)
-                # print(unDispatchedRequestsID_set)
-                #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],
-                #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
+            requestID = minpq_unDispatched_request.get()[1]
+            request = self._source_pool.requests.getUnDispatchedPool[requestID]
+            # print("requestID:", requestID, "creation_time:", request["creation_time"])
+            # print("当前需要决定的requestID:", requestID)
+            # print(unDispatchedRequestsID_set)
+            #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],
+            #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
 
-                source_pool_temp = deepcopy(self._source_pool)
-                random.shuffle(available_vehicleID_set)
-                insertion_flag = False  # 判断是否插入成功
-                insertion_score_dict = dict()
-                best_score = np.infty
-                for vehicleID in available_vehicleID_set:
-                    pickup_customer_id = request["pickup_demand_info"]["customer_id"]
-                    delivery_customer_id = request["delivery_demand_info"]["customer_id"]
-                    if request["pickup_demand_info"]["volume"] > self._source_pool.vehicles[vehicleID].getCapacity:
-                        """需求拆分"""
-                        print("需求超过最大载重！！  ", requestID)
+            source_pool_temp = deepcopy(self._source_pool)
+            random.shuffle(available_vehicleID_set)
+            insertion_flag = False  # 判断是否插入成功
+            insertion_score_dict = dict()
+            best_score = np.infty
+            for vehicleID in available_vehicleID_set:
+                pickup_customer_id = request["pickup_demand_info"]["customer_id"]
+                delivery_customer_id = request["delivery_demand_info"]["customer_id"]
+                if request["pickup_demand_info"]["volume"] > self._source_pool.vehicles[vehicleID].getCapacity:
+                    """需求拆分"""
+                    print("需求超过最大载重！！  ", requestID)
+                    continue
+                if len(self._source_pool.vehicles[vehicleID].getCurrentRoute) == 1:  # 安排一辆空闲的车
+                    """车辆从起始点出发"""
+                    depotNode = self._source_pool.vehicles[vehicleID].getCurrentRoute[0]
+                    if depotNode.requestID == 0 and not depotNode.vehicleArriveTime:
+                        self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleArriveTime(time2Go)
+                        self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleDepartureTime(time2Go)
+                    depotID = self._source_pool.vehicles[vehicleID].getDepotID
+                    travel_cost_depot2pickup = self._travelCost_solver.getTravelCost(depotID, delivery_customer_id)
+                    travel_cost_pickup2delivery = self._travelCost_solver.getTravelCost(pickup_customer_id,
+                                                                                        delivery_customer_id)
+                    pickup_tw_constrain = self._time_window_constrain(depotNode,
+                                                                      pickup_customer_id,
+                                                                      "pickup",
+                                                                      request)
+                    if not pickup_tw_constrain["feasible"]:
                         continue
-                    if len(self._source_pool.vehicles[vehicleID].getCurrentRoute) == 1:  # 安排一辆空闲的车
-                        """车辆从起始点出发"""
-                        depotNode = self._source_pool.vehicles[vehicleID].getCurrentRoute[0]
-                        if depotNode.requestID == 0 and not depotNode.vehicleArriveTime:
-                            self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleArriveTime(time2Go)
-                            self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleDepartureTime(time2Go)
-                        depotID = self._source_pool.vehicles[vehicleID].getDepotID
-                        travel_cost_depot2pickup = self._travelCost_solver.getTravelCost(depotID, delivery_customer_id)
-                        travel_cost_pickup2delivery = self._travelCost_solver.getTravelCost(pickup_customer_id,
-                                                                                            delivery_customer_id)
-                        pickup_tw_constrain = self._time_window_constrain(depotNode,
-                                                                          pickup_customer_id,
-                                                                          "pickup",
-                                                                          request)
-                        if not pickup_tw_constrain["feasible"]:
-                            continue
 
-                        c11 = travel_cost_depot2pickup["distance"] + travel_cost_pickup2delivery["distance"]
-                        c11 += self._source_pool.vehicles[vehicleID].getMileage
-                        if best_score < c11:
-                            continue
-                        if not self._insertion_constrain(vehicleID,
-                                                         pickup_customer_id,
-                                                         "pickup",
-                                                         pickup_tw_constrain["arrive_customer_time"],
-                                                         requestID,
-                                                         request,
-                                                         1,
-                                                         source_pool_temp):
-                            continue
+                    c11 = travel_cost_depot2pickup["distance"] + travel_cost_pickup2delivery["distance"]
+                    c11 += self._source_pool.vehicles[vehicleID].getMileage
+                    if best_score < c11:
+                        continue
+                    if not self._insertion_constrain(vehicleID,
+                                                     pickup_customer_id,
+                                                     "pickup",
+                                                     pickup_tw_constrain["arrive_customer_time"],
+                                                     requestID,
+                                                     request,
+                                                     1,
+                                                     source_pool_temp):
+                        continue
 
-                        pickupNode = self._source_pool.vehicles[vehicleID].getCurrentRoute[1]
-                        delivery_tw_constrain = self._time_window_constrain(pickupNode,
-                                                                            delivery_customer_id,
-                                                                            "delivery",
-                                                                            request)
-                        if not delivery_tw_constrain["feasible"]:
-                            self._source_pool = deepcopy(source_pool_temp)
-                            self._vehicle_customer_match()
-                            continue
-                        if not self._insertion_constrain(vehicleID,
-                                                         delivery_customer_id,
-                                                         "delivery",
-                                                         delivery_tw_constrain["arrive_customer_time"],
-                                                         requestID,
-                                                         request,
-                                                         2,
-                                                         source_pool_temp):
-                            continue
-                        insertion_flag = True
-                        self._source_pool.vehicles[vehicleID].getCurrentRoute[1].setBrotherNode(
-                            self._source_pool.vehicles[vehicleID].getCurrentRoute[2])
-                        self._source_pool.vehicles[vehicleID].getCurrentRoute[2].setBrotherNode(
-                            self._source_pool.vehicles[vehicleID].getCurrentRoute[1])
-                        best_score = c11
-                        insertion_score_dict = {"score": best_score,
-                                                "vehicleID": vehicleID,
-                                                "requestID": requestID,
-                                                "sourcePool": deepcopy(self._source_pool)}
+                    pickupNode = self._source_pool.vehicles[vehicleID].getCurrentRoute[1]
+                    delivery_tw_constrain = self._time_window_constrain(pickupNode,
+                                                                        delivery_customer_id,
+                                                                        "delivery",
+                                                                        request)
+                    if not delivery_tw_constrain["feasible"]:
                         self._source_pool = deepcopy(source_pool_temp)
                         self._vehicle_customer_match()
-                    else:  # 在现有路线上插入需求
-                        pd_insert_info = self._orderMatched(vehicleID, request)
-                        route_length = len(self._source_pool.vehicles[vehicleID].getCurrentRoute)
-                        flag_temp = False
-                        if pd_insert_info["pickup_flag"]:
-                            same_node = self._source_pool.vehicles[vehicleID].getCurrentRoute[
-                                pd_insert_info["pickup_route_index"] - 1]
-                            if self._insertion_constrain(vehicleID,
-                                                         pickup_customer_id,
-                                                         "pickup",
-                                                         same_node.vehicleArriveTime,
-                                                         requestID,
-                                                         request,
-                                                         pd_insert_info["pickup_route_index"],
-                                                         source_pool_temp):
-                                flag_temp = True
-                                if pd_insert_info["delivery_flag"]:
-                                    same_node = self._source_pool.vehicles[vehicleID].getCurrentRoute[
-                                        pd_insert_info["delivery_route_index"]]
-                                    if self._insertion_constrain(vehicleID,
-                                                                 delivery_customer_id,
-                                                                 "delivery",
-                                                                 same_node.vehicleArriveTime,
-                                                                 requestID,
-                                                                 request,
-                                                                 pd_insert_info["delivery_route_index"] ,
-                                                                 source_pool_temp):
-                                        best_score = 0
-                                        insertion_flag = True
-                                        p_index = pd_insert_info["pickup_route_index"]
-                                        d_index = pd_insert_info["delivery_route_index"] + 1
-                                        self._source_pool.vehicles[vehicleID].getCurrentRoute[p_index].setBrotherNode(
-                                            self._source_pool.vehicles[vehicleID].getCurrentRoute[d_index])
-                                        self._source_pool.vehicles[vehicleID].getCurrentRoute[d_index].setBrotherNode(
-                                            self._source_pool.vehicles[vehicleID].getCurrentRoute[p_index])
-                                        insertion_score_dict = {"score": best_score,
-                                                                "vehicleID": vehicleID,
-                                                                "requestID": requestID,
-                                                                "sourcePool": deepcopy(self._source_pool)}
-                                    break
-                                else:
-                                    insertion_score_dict_temp = self._delivery_insertion(
-                                        pd_insert_info["pickup_route_index"],
-                                        route_length,
-                                        pickup_customer_id,
-                                        delivery_customer_id,
-                                        request,
-                                        requestID,
-                                        vehicleID,
-                                        source_pool_temp,
-                                        best_score)
-                                    if insertion_score_dict_temp:
-                                        insertion_flag = True
-                                        insertion_score_dict = insertion_score_dict_temp
-                                        best_score = insertion_score_dict["score"]
-                        if not flag_temp:
-                            insertion_score_dict_temp = self._PD_insertion(
-                                                                            vehicleID,
-                                                                            request,
-                                                                            pickup_customer_id,
-                                                                            delivery_customer_id,
-                                                                            requestID,
-                                                                            source_pool_temp,
-                                                                            best_score)
-                            if insertion_score_dict_temp:
-                                insertion_flag = True
-                                insertion_score_dict = insertion_score_dict_temp
-                                best_score = insertion_score_dict["score"]
-
-                if insertion_flag:
-                    """ 选择最优结果的那一辆车"""
-                    unDispatchedRequestsID_set.remove(insertion_score_dict["requestID"])
-                    # print(unDispatchedRequestsID_set)
-                    self._source_pool = insertion_score_dict["sourcePool"]
-                    self._source_pool.requests.updateDispatchedRequestPool(insertion_score_dict["requestID"], "add")
-                    self._vehicle_customer_match()
-                    # checks().print_solution(self._source_pool.vehicles)
-                    # print("------------------------------------------------------------------------")
-
-                else:
-                    """需求分配失败"""
-                    print("insertion fail!! ", requestID, file=sys.stderr)
-                    self._fail_insertion_requests.append({requestID:
-                                                              self._source_pool.requests.getUnDispatchedPool[requestID]})
-                    unDispatchedRequestsID_set.remove(requestID)
-                    source_pool_temp.requests.getUnDispatchedPool.pop(requestID)
+                        continue
+                    if not self._insertion_constrain(vehicleID,
+                                                     delivery_customer_id,
+                                                     "delivery",
+                                                     delivery_tw_constrain["arrive_customer_time"],
+                                                     requestID,
+                                                     request,
+                                                     2,
+                                                     source_pool_temp):
+                        continue
+                    insertion_flag = True
+                    self._source_pool.vehicles[vehicleID].getCurrentRoute[1].setBrotherNode(
+                        self._source_pool.vehicles[vehicleID].getCurrentRoute[2])
+                    self._source_pool.vehicles[vehicleID].getCurrentRoute[2].setBrotherNode(
+                        self._source_pool.vehicles[vehicleID].getCurrentRoute[1])
+                    best_score = c11
+                    insertion_score_dict = {"score": best_score,
+                                            "vehicleID": vehicleID,
+                                            "requestID": requestID,
+                                            "sourcePool": deepcopy(self._source_pool)}
                     self._source_pool = deepcopy(source_pool_temp)
                     self._vehicle_customer_match()
+                else:  # 在现有路线上插入需求
+                    pd_insert_info = self._orderMatched(vehicleID, request)
+                    route_length = len(self._source_pool.vehicles[vehicleID].getCurrentRoute)
+                    flag_temp = False
+                    if pd_insert_info["pickup_flag"]:
+                        same_node = self._source_pool.vehicles[vehicleID].getCurrentRoute[
+                            pd_insert_info["pickup_route_index"] - 1]
+                        if self._insertion_constrain(vehicleID,
+                                                     pickup_customer_id,
+                                                     "pickup",
+                                                     same_node.vehicleArriveTime,
+                                                     requestID,
+                                                     request,
+                                                     pd_insert_info["pickup_route_index"],
+                                                     source_pool_temp):
+                            flag_temp = True
+                            if pd_insert_info["delivery_flag"]:
+                                same_node = self._source_pool.vehicles[vehicleID].getCurrentRoute[
+                                    pd_insert_info["delivery_route_index"]]
+                                if self._insertion_constrain(vehicleID,
+                                                             delivery_customer_id,
+                                                             "delivery",
+                                                             same_node.vehicleArriveTime,
+                                                             requestID,
+                                                             request,
+                                                             pd_insert_info["delivery_route_index"] ,
+                                                             source_pool_temp):
+                                    best_score = 0
+                                    insertion_flag = True
+                                    p_index = pd_insert_info["pickup_route_index"]
+                                    d_index = pd_insert_info["delivery_route_index"] + 1
+                                    self._source_pool.vehicles[vehicleID].getCurrentRoute[p_index].setBrotherNode(
+                                        self._source_pool.vehicles[vehicleID].getCurrentRoute[d_index])
+                                    self._source_pool.vehicles[vehicleID].getCurrentRoute[d_index].setBrotherNode(
+                                        self._source_pool.vehicles[vehicleID].getCurrentRoute[p_index])
+                                    insertion_score_dict = {"score": best_score,
+                                                            "vehicleID": vehicleID,
+                                                            "requestID": requestID,
+                                                            "sourcePool": deepcopy(self._source_pool)}
+                                break
+                            else:
+                                insertion_score_dict_temp = self._delivery_insertion(
+                                    pd_insert_info["pickup_route_index"],
+                                    route_length,
+                                    pickup_customer_id,
+                                    delivery_customer_id,
+                                    request,
+                                    requestID,
+                                    vehicleID,
+                                    source_pool_temp,
+                                    best_score)
+                                if insertion_score_dict_temp:
+                                    insertion_flag = True
+                                    insertion_score_dict = insertion_score_dict_temp
+                                    best_score = insertion_score_dict["score"]
+                    if not flag_temp:
+                        insertion_score_dict_temp = self._PD_insertion(
+                                                                        vehicleID,
+                                                                        request,
+                                                                        pickup_customer_id,
+                                                                        delivery_customer_id,
+                                                                        requestID,
+                                                                        source_pool_temp,
+                                                                        best_score)
+                        if insertion_score_dict_temp:
+                            insertion_flag = True
+                            insertion_score_dict = insertion_score_dict_temp
+                            best_score = insertion_score_dict["score"]
+
+            if insertion_flag:
+                """ 选择最优结果的那一辆车"""
+                # unDispatchedRequestsID_set.remove(insertion_score_dict["requestID"])
+                # print(unDispatchedRequestsID_set)
+                self._source_pool = insertion_score_dict["sourcePool"]
+                self._source_pool.requests.updateDispatchedRequestPool(insertion_score_dict["requestID"], "add")
+                self._vehicle_customer_match()
+                # checks().print_solution(self._source_pool.vehicles)
+                # print("------------------------------------------------------------------------")
+
+            else:
+                """需求分配失败"""
+                print("insertion fail requestID:", requestID,
+                      "creation_time:", request["creation_time"], file=sys.stderr)
+                self._fail_insertion_requests.append({requestID:
+                                                          self._source_pool.requests.getUnDispatchedPool[requestID]})
+                # unDispatchedRequestsID_set.remove(requestID)
+                source_pool_temp.requests.getUnDispatchedPool.pop(requestID)
+                self._source_pool = deepcopy(source_pool_temp)
+                self._vehicle_customer_match()
         if self._fail_insertion_requests:
             # print(self._fail_insertion_requests)
             return False

@@ -121,6 +121,13 @@ class DVRPPD_Solver(object):
                                                     self._travelCost_solver)
             if constructor.solve():
                 return True
+            else:
+                # fail_insertion_requests，存到本地
+                # 等下一个时间点，再尝试进行插入
+                # 12：00 fail, 12:10 fail, 12:20,fail， 但是呢，这个订单是在12:04创建，超过30分种都没插入成功的话，这个时候就需要
+                # 强行插入了，【12：04, 16:04】 , 16:10完成， 【12：04， 16：10】
+                # return True
+                pass
         return False
 
     def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"), CPU_limit=10):
