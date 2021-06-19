@@ -6,17 +6,17 @@ import math
 from datetime import datetime, timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.vrppd.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.vrppd.customer import customer
-from simulator.dpdp_competition.algorithm.vrppd.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.vrppd.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
+from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
     RegretInsertionOperator
-from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.vrppd.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
 
-import simulator.dpdp_competition.algorithm.vrppd.getConfig
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class AdaptiveLargeNeighborhoodSearch(object):

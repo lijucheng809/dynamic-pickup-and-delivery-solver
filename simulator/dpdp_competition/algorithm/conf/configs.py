@@ -4,7 +4,7 @@ import os
 class configs(object):
     root_folder_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     algorithm_folder_path = os.path.join(root_folder_path, "algorithm")
-    config_ini_path = os.path.join(algorithm_folder_path, "vrppd\config\config.ini")
+    config_ini_path = os.path.join(algorithm_folder_path, "src\config\config.ini")
     customer_info_path = os.path.join(algorithm_folder_path,
                                       "data\dynamic_pickup_and_delivery_testdata\customer\customer_info.json")
 

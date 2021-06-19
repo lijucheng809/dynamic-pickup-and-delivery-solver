@@ -2,14 +2,14 @@ from typing import List, Dict
 from datetime import datetime, timedelta
 import time
 
-from simulator.dpdp_competition.algorithm.vrppd.customer import customer
-from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.vrppd.utlis import customer_request_combination, \
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
     feasibleRearrangePortAssignmentSchedule
 
-import simulator.dpdp_competition.algorithm.vrppd.getConfig
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class vehicle(object):

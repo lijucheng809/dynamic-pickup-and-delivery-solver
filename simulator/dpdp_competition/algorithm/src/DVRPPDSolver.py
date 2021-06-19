@@ -4,15 +4,15 @@ import webbrowser as wb
 from datetime import datetime, timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.vrppd.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.vrppd.constructor import solomonInsertionHeuristic
-from simulator.dpdp_competition.algorithm.vrppd.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.vrppd.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
-from simulator.dpdp_competition.algorithm.vrppd.ALNS import AdaptiveLargeNeighborhoodSearch
-from simulator.dpdp_competition.algorithm.vrppd.utlis import checker
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
+from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
+from simulator.dpdp_competition.algorithm.src.utlis import checker
 
-import simulator.dpdp_competition.algorithm.vrppd.getConfig
-gConfig = simulator.dpdp_competition.algorithm.vrppd.getConfig.get_config()
+import simulator.dpdp_competition.algorithm.src.getConfig
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class DVRPPD_Solver(object):
