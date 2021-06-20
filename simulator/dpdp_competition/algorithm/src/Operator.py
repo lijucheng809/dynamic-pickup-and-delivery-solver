@@ -253,7 +253,7 @@ class GreedyInsertionOperator(insertOperator):
             else:
                 continue
 
-        random.shuffle(available_vehicleID_set)
+        # random.shuffle(available_vehicleID_set)
         return available_vehicleID_set, minpq_unDispatched_request
 
     def _time_window_constrain(self,
@@ -484,7 +484,7 @@ class GreedyInsertionOperator(insertOperator):
                                        j,
                                        pickup_customer_id,
                                        delivery_customer_id)
-            c11 += self._source_pool.vehicles[vehicleID].getMileage
+            c11 += self._get_current_mileage(source_pool_temp.vehicles)
             if best_score < c11 or c11 == np.infty:
                 continue
 
@@ -530,12 +530,8 @@ class GreedyInsertionOperator(insertOperator):
             request = self._source_pool.requests.getUnDispatchedPool[requestID]
             # print("requestID:", requestID, "creation_time:", request["creation_time"])
             # print("当前需要决定的requestID:", requestID)
-            # print(unDispatchedRequestsID_set)
-            #       " p_customer_id:", request["pickup_demand_info"]["customer_id"],
-            #       " d_customer_id:", request["delivery_demand_info"]["customer_id"])
-
             source_pool_temp = deepcopy(self._source_pool)
-            random.shuffle(available_vehicleID_set)
+            # random.shuffle(available_vehicleID_set)
             insertion_flag = False  # 判断是否插入成功
             insertion_score_dict = dict()
             best_score = np.infty
@@ -553,7 +549,7 @@ class GreedyInsertionOperator(insertOperator):
                         self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleArriveTime(time2Go)
                         self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleDepartureTime(time2Go)
                     depotID = self._source_pool.vehicles[vehicleID].getDepotID
-                    travel_cost_depot2pickup = self._travelCost_solver.getTravelCost(depotID, delivery_customer_id)
+                    travel_cost_depot2pickup = self._travelCost_solver.getTravelCost(depotID, pickup_customer_id)
                     travel_cost_pickup2delivery = self._travelCost_solver.getTravelCost(pickup_customer_id,
                                                                                         delivery_customer_id)
                     pickup_tw_constrain = self._time_window_constrain(depotNode,
@@ -564,7 +560,7 @@ class GreedyInsertionOperator(insertOperator):
                         continue
 
                     c11 = travel_cost_depot2pickup["distance"] + travel_cost_pickup2delivery["distance"]
-                    c11 += self._source_pool.vehicles[vehicleID].getMileage
+                    c11 += self._get_current_mileage(source_pool_temp.vehicles)
                     if best_score < c11:
                         continue
                     if not self._insertion_constrain(vehicleID,
@@ -701,13 +697,21 @@ class GreedyInsertionOperator(insertOperator):
             return False
         return True
 
+    def _get_current_mileage(self, vehicles):
+        score = 0
+        for vehicleID in vehicles:
+            vehicles[vehicleID].updateTravelCost(self._travelCost_solver)
+            score += vehicles[vehicleID].getCurrentRouteCost
+            score += vehicles[vehicleID].getMileage
+        return score
+
     @property
     def getObjectiveScore(self):
         score = 0
         for vehicleID in self._source_pool.vehicles:
             self._source_pool.vehicles[vehicleID].updateTravelCost(self._travelCost_solver)
             score += self._source_pool.vehicles[vehicleID].getCurrentRouteCost
-            score -= self._source_pool.vehicles[vehicleID].getMileage
+            score += self._source_pool.vehicles[vehicleID].getMileage
         return score
 
     def outputSolution(self):
@@ -733,7 +737,8 @@ class RegretInsertionOperator(GreedyInsertionOperator):
             del candidate_[len(candidate_) - 1]
 
     def insert(self,
-               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")) -> bool:
+               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               tp="constructor") -> bool:
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         # print(unDispatchedRequestsID_set)
         unDispatchedRequestsID_num = len(unDispatchedRequestsID_set)

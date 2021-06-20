@@ -17,3 +17,5 @@ class configs(object):
     unallocated_order_items_path = os.path.join(data_interaction_folder_path, "unallocated_order_items.json")
     output_destination_path = os.path.join(data_interaction_folder_path, "output_destination.json")
     output_route_path = os.path.join(data_interaction_folder_path, "output_route.json")
+    middle_vehicle_info_path = os.path.join(data_interaction_folder_path, "middle_vehicle_info.json")
+    time_out_requests = os.path.join(data_interaction_folder_path, "time_out_requests.json")

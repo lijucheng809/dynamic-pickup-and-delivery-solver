@@ -1,3 +1,5 @@
+import json
+import os
 import folium
 import numpy as np
 import webbrowser as wb
@@ -9,7 +11,8 @@ from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertio
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
 from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
-from simulator.dpdp_competition.algorithm.src.utlis import checker
+from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 import simulator.dpdp_competition.algorithm.src.getConfig
 gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
@@ -111,15 +114,41 @@ class DVRPPD_Solver(object):
         else:
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             fail_insertion_requests = constructor.get_fail_insertion_requests
+            time_out_requests = {}
             if fail_insertion_requests:
                 for requests_info in fail_insertion_requests:
-                    self.addNewRequest2RequestsPool(requests_info)
-            self.heuristicEngine(CPU_limit=2)
-            constructor = solomonInsertionHeuristic(self._vehiclesPool,
-                                                    self._requestsPool,
-                                                    self._customersPool,
-                                                    self._travelCost_solver)
-            if constructor.solve():
+                    requests_info_temp = requests_info
+                    for requestID in requests_info:
+                        tw_right = datetime.strptime(requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1],
+                                                     "%Y-%m-%d %H:%M:%S")
+                        tw_right += timedelta(hours=4)
+                        requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1] = str(tw_right)
+                        requests_info_temp[requestID]["delivery_demand_info"]["time_window"][1] = str(tw_right)
+                        requestID_temp = requestID
+                        if "-" in requestID:
+                            _index = requestID.index("-")
+                            requestID_temp = requestID[:_index]
+                        time_out_requests[requestID_temp] = requests_info_temp[requestID]
+                        self.addNewRequest2RequestsPool(requests_info_temp)
+            # self.heuristicEngine(CPU_limit=1)
+            constructor1 = solomonInsertionHeuristic(self._vehiclesPool,
+                                                     self._requestsPool,
+                                                     self._customersPool,
+                                                     self._travelCost_solver)
+            if constructor1.solve():
+                if os.path.exists(configs.time_out_requests):
+                    with open(configs.time_out_requests, "r") as f:
+                        time_out_requests_old = json.load(f)
+                    for requestID in time_out_requests:
+                        if requestID not in time_out_requests_old:
+                            time_out_requests_old[requestID] = time_out_requests[requestID]
+                    with open(configs.time_out_requests, "w") as f:
+                        json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
+                else:
+                    with open(configs.time_out_requests, "w") as f:
+                        json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
+                self._vehiclesPool, self._customersPool, self._requestsPool = constructor1.outputSolution
+                self._print_solution()
                 return True
             else:
                 # fail_insertion_requests，存到本地

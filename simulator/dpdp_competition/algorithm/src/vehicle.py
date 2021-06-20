@@ -1,11 +1,14 @@
+import json
 from typing import List, Dict
 from datetime import datetime, timedelta
 import time
+import os
 
 from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
     feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 import simulator.dpdp_competition.algorithm.src.getConfig
 
@@ -237,6 +240,10 @@ class vehicle(object):
                       ongoing_items_map,
                       requests_items_map,
                       travelCost_solver=costDatabase()):
+        time_out_requests = {}
+        if os.path.exists(configs.time_out_requests):
+            with open(configs.time_out_requests, "r") as f:
+                time_out_requests = json.load(f)
         while request_id_on_order:
             requestID = request_id_on_order.pop()
             customerID = ongoing_items_map[requests_items_map[requestID]["delivery_only"][0]]["delivery_factory_id"]
@@ -253,6 +260,9 @@ class vehicle(object):
                                                               time.localtime(committed_completion_time))
                     time_window_left = creation_time
                     time_window_right = committed_completion_time
+                    requestID_temp = requestID[:requestID.index("V")]
+                    if requestID_temp in time_out_requests:
+                        time_window_right = time_out_requests[requestID_temp]["pickup_demand_info"]["time_window"][1]
             # requestID = requestID + "_ongoing"
             node = customer_request_combination(customerID,
                                                 requestID,
@@ -273,7 +283,7 @@ class vehicle(object):
             if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
                 customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
             if not feasibleRearrangePortAssignmentSchedule(customers, customerID, node):
-                print("固定路线生成失败？？？？？？？？")
+                print("固定路线生成失败, requestID:", node.requestID)
 
     def activateVehicle(self, volume=0):
         self._status = 'idle'

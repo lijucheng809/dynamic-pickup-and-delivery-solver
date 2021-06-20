@@ -5,7 +5,7 @@ from simulator.dpdp_competition.algorithm.conf.configs import configs
 from copy import deepcopy
 
 
-def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=4):
+def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=5):
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
     q_small_split_num = len(request_item_map["q_small"]) // spilt_num
     q_box_split_num = len(request_item_map["q_box"]) // spilt_num
@@ -228,6 +228,40 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
         json.dump(destination, f, indent=4)
     with open(configs.output_route_path, "w") as f:
         json.dump(vehicle_route, f, indent=4)
+
+    with open(configs.vehicle_info_path, "r") as f:
+        vehicles_info = json.load(f)
+    flag = True
+    for vehicle_info in vehicles_info:
+        if vehicle_info["destination"]:
+            flag = False
+            break
+    vehicle_start_end_pair = {}
+    if flag:
+        for vehicle_info in vehicles_info:
+            start_pos = vehicle_info["cur_factory_id"]
+            if destination[vehicle_info["id"]]:
+                end_pos = destination[vehicle_info["id"]]["factory_id"]
+            else:
+                end_pos = start_pos
+            vehicle_start_end_pair[vehicle_info["id"]] = {"start": start_pos, "end": end_pos}
+    else:
+        with open(configs.middle_vehicle_info_path, "r") as f:
+            middle_vehicles_info = json.load(f)
+        for vehicle_info in vehicles_info:
+            vehicleID = vehicle_info["id"]
+            if vehicle_info["cur_factory_id"]:
+                start_pos = vehicle_info["cur_factory_id"]
+            else:
+                start_pos = middle_vehicles_info[vehicleID]["start"]
+            if destination[vehicle_info["id"]]:
+                end_pos = destination[vehicle_info["id"]]["factory_id"]
+            else:
+                end_pos = start_pos
+            vehicle_start_end_pair[vehicle_info["id"]] = {"start": start_pos, "end": end_pos}
+
+    with open(configs.middle_vehicle_info_path, "w") as f:
+        json.dump(vehicle_start_end_pair, f, indent=4)
 
 
 if __name__ == "__main__":
