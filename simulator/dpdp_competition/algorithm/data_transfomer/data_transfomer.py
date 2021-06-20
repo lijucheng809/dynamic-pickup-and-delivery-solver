@@ -2,9 +2,10 @@ import json
 import time
 from datetime import datetime, timedelta
 from simulator.dpdp_competition.algorithm.conf.configs import configs
+from copy import deepcopy
 
 
-def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=3):
+def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=4):
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
     q_small_split_num = len(request_item_map["q_small"]) // spilt_num
     q_box_split_num = len(request_item_map["q_box"]) // spilt_num
@@ -18,12 +19,12 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
             kid_q_small_num_list[i] = q_small_split_num
             kid_q_box_num_list[i] = q_box_split_num
         else:
-            kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - 2 * q_standard_split_num
-            kid_q_small_num_list[i] = len(request_item_map["q_small"]) - 2 * q_small_split_num
-            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - 2 * q_box_split_num
+            kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
+            kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
+            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - (spilt_num-1) * q_box_split_num
     for i in range(spilt_num):
         kid_requestID = requestID + "-{}".format(i + 1)
-        kid_requests[kid_requestID] = request
+        kid_requests[kid_requestID] = deepcopy(request)
         kid_requests[kid_requestID]["pallets"]["q_standard"] = kid_q_standard_num_list[i]
         kid_requests[kid_requestID]["pallets"]["q_small"] = kid_q_small_num_list[i]
         kid_requests[kid_requestID]["pallets"]["q_box"] = kid_q_box_num_list[i]
