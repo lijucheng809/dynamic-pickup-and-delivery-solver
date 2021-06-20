@@ -253,7 +253,7 @@ class vehicle(object):
                                                               time.localtime(committed_completion_time))
                     time_window_left = creation_time
                     time_window_right = committed_completion_time
-            requestID = requestID + "_ongoing"
+            # requestID = requestID + "_ongoing"
             node = customer_request_combination(customerID,
                                                 requestID,
                                                 "delivery",
