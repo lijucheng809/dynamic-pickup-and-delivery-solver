@@ -129,7 +129,6 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             for item_id in carrying_items:
                 order_id = ongoing_items_map[item_id]["order_id"]
                 order_id_temp = order_id
-                # TODO 检查
                 if order_id_temp in request_info["requests_items_map"]:
                     order_id_temp = order_id_temp + vehicleID
                 if order_id_temp not in request_id_on_order:
