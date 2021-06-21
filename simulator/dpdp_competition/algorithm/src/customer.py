@@ -129,7 +129,11 @@ class customer(object):
         batchNode = {}
         temp_nodes = set()
         key = 1
+        tip = False
         for requestID, node in self._dispatchedRequests.items():
+            # if node.requestID == "0020420068" and node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
+            #     print("ppppppppppppppppppppppppppppppppppppppppppppppppp")
+            #     tip = True
             if node not in temp_nodes:
                 q_unDispatchedNode.put((node.vehicleArriveTime, node))
                 if node.leftNode and node.leftNode.requestID != node.requestID and node.leftNode.requestID in self._dispatchedRequests or \
@@ -159,8 +163,18 @@ class customer(object):
                 if node in batchNode[key]:
                     batch_node = batchNode[key]
                     break
-            earliestDepartureTime = node.vehicleArriveTime + timedelta(
-                seconds=gConfig["static_process_time_on_customer"])
+            if node.demandType != "parking":
+                earliestDepartureTime = node.vehicleArriveTime + timedelta(
+                    seconds=gConfig["static_process_time_on_customer"])
+            else:
+                earliestDepartureTime = node.vehicleArriveTime
+            if node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
+                if batch_node:
+                    for nd in batch_node:
+                        print(nd.requestID)
+                # if tip and not batchNode:
+                #     assert not tip
+                print("----------------------------------------------------------")
             if batch_node:
                 for nd in batch_node:
                     earliestDepartureTime += timedelta(seconds=nd.processTime)

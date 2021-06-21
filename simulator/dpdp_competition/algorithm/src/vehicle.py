@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import List, Dict
 from datetime import datetime, timedelta
 import time
@@ -275,6 +276,7 @@ class vehicle(object):
             left_node = self._route[len(self._route) - 1]
             travel_cost = travelCost_solver.getTravelCost(left_node.customerID, customerID)
             arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+            # print("vehicleID:", self._vehicleID, " requestID:", requestID, " arrive_time:",arrive_time)
             node.setVehicleArriveTime(arrive_time)
             left_node.setRightNode(node)
             node.setLeftNode(left_node)
@@ -282,8 +284,10 @@ class vehicle(object):
             self.updateVolume(volume)
             if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
                 customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
-            if not feasibleRearrangePortAssignmentSchedule(customers, customerID, node):
-                print("固定路线生成失败, requestID:", node.requestID)
+            flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node)
+            if not flag:
+                # assert flag
+                print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
 
     def activateVehicle(self, volume=0):
         self._status = 'idle'

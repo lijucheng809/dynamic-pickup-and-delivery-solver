@@ -202,21 +202,21 @@ class DVRPPD_Solver(object):
                               "leave_time:", node.vehicleDepartureTime,
                               "travel_time: ", dis["travel_time"] / 60.,
                               "dis: ", dis["distance"], file=sys.stderr)
-        # print("score is:", objective_score)
-        # for customerID in self._customersPool:
-        #     ports = self._customersPool[customerID].getCurrentPortStatus
-        #     for index, port in enumerate(ports):
-        #         if len(port) > 0:
-        #             print("customerID is:", customerID,
-        #                   "port ID is:", index,
-        #                   end=" ")
-        #             for node in port:
-        #                 print("[vehicleID is:", node.vehicleID,
-        #                       "requestID is ", node.requestID,
-        #                       "   arrive_time is:", node.vehicleArriveTime,
-        #                       "leave_time is:", node.vehicleDepartureTime, "]",
-        #                       end=" ")
-        #             print()
+        print("score is:", objective_score)
+        for customerID in self._customersPool:
+            ports = self._customersPool[customerID].getCurrentPortStatus
+            for index, port in enumerate(ports):
+                if len(port) > 0:
+                    print("customerID is:", customerID,
+                          "port ID is:", index,
+                          end=" ")
+                    for node in port:
+                        print("[vehicleID is:", node.vehicleID,
+                              "requestID is ", node.requestID,
+                              "   process_time is:", node.startProcessTime,
+                              "leave_time is:", node.vehicleDepartureTime, "]",
+                              end=" ")
+                    print()
 
     def _gen_object_score(self):
         self.objective_score = 0

@@ -378,6 +378,10 @@ class GreedyInsertionOperator(insertOperator):
         route = self._source_pool.vehicles[vehicleID].getCurrentRoute
         pickup_customer_id = request["pickup_demand_info"]["customer_id"]
         delivery_customer_id = request["delivery_demand_info"]["customer_id"]
+        requestID = request["requestID"]
+        if "-" in requestID:
+            _index = requestID.index("-")
+            requestID = requestID[:_index]
         pickup_flag = False
         delivery_flag = False
         pickup_route_index = None
@@ -385,6 +389,10 @@ class GreedyInsertionOperator(insertOperator):
         for index, node in enumerate(route):
             if index == 0:
                 continue
+            if requestID in node.requestID:
+                pickup_route_index = index + 1
+                pickup_flag = True
+                break
             if node.customerID == pickup_customer_id and not pickup_flag:
                 if self._capacity_constrain(request, vehicleID, index) \
                         and self._time_window_constrain(node, pickup_customer_id, "pickup", request)["feasible"]:
@@ -415,6 +423,12 @@ class GreedyInsertionOperator(insertOperator):
         for i in range(1, route_length + 1):
             route = self._source_pool.vehicles[vehicleID].getCurrentRoute
             if i == 1 and route[i].demandType == "delivery":
+                continue
+            requestID_new = request["requestID"]
+            if "-" in requestID_new:
+                _index = requestID_new.index("-")
+                requestID_new = requestID_new[:_index]
+            if 1 < i < route_length-1 and requestID_new in route[i-1].requestID and requestID_new in route[i+1].requestID:
                 continue
             # 容量约束
             if not self._capacity_constrain(request, vehicleID, i - 1):
@@ -528,7 +542,7 @@ class GreedyInsertionOperator(insertOperator):
             # best_score = np.infty
             requestID = minpq_unDispatched_request.get()[1]
             request = self._source_pool.requests.getUnDispatchedPool[requestID]
-            # print("requestID:", requestID, "creation_time:", request["creation_time"])
+            print("当前requestID:", requestID, "creation_time:", request["creation_time"])
             # print("当前需要决定的requestID:", requestID)
             source_pool_temp = deepcopy(self._source_pool)
             # random.shuffle(available_vehicleID_set)
