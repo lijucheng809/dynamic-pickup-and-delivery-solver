@@ -430,6 +430,8 @@ class GreedyInsertionOperator(insertOperator):
                 requestID_new = requestID_new[:_index]
             if 1 < i < route_length-1 and requestID_new in route[i-1].requestID and requestID_new in route[i+1].requestID:
                 continue
+            if 1 < i < route_length-1 and route[i-1].customerID == route[i+1].customerID:
+                continue
             # 容量约束
             if not self._capacity_constrain(request, vehicleID, i - 1):
                 continue
@@ -542,7 +544,7 @@ class GreedyInsertionOperator(insertOperator):
             # best_score = np.infty
             requestID = minpq_unDispatched_request.get()[1]
             request = self._source_pool.requests.getUnDispatchedPool[requestID]
-            print("当前requestID:", requestID, "creation_time:", request["creation_time"])
+            # print("当前requestID:", requestID, "creation_time:", request["creation_time"])
             # print("当前需要决定的requestID:", requestID)
             source_pool_temp = deepcopy(self._source_pool)
             # random.shuffle(available_vehicleID_set)

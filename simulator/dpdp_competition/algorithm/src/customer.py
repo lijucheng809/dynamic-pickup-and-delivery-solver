@@ -168,13 +168,13 @@ class customer(object):
                     seconds=gConfig["static_process_time_on_customer"])
             else:
                 earliestDepartureTime = node.vehicleArriveTime
-            if node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
-                if batch_node:
-                    for nd in batch_node:
-                        print(nd.requestID)
-                # if tip and not batchNode:
-                #     assert not tip
-                print("----------------------------------------------------------")
+            # if node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
+            #     if batch_node:
+            #         for nd in batch_node:
+            #             print(nd.processTime, nd.requestID)
+            #     # if tip and not batchNode:
+            #     #     assert not tip
+            #     print("----------------------------------------------------------")
             if batch_node:
                 for nd in batch_node:
                     earliestDepartureTime += timedelta(seconds=nd.processTime)
