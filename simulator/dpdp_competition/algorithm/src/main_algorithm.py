@@ -202,14 +202,16 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 def scheduling():
     start_time = time.time()
     dvrppd_Solver = DVRPPD_Solver()
+    middle_vehicle_info = None
     with open(configs.customer_info_path,  "r") as f:
         customer_id_info_map = json.load(f)
     with open(configs.vehicle_info_path, "r") as f:
         vehicles_info = json.load(f)
     with open(configs.ongoing_items_path, "r") as f:
         ongoing_items = json.load(f)
-    with open(configs.middle_vehicle_info_path, "r") as f:
-        middle_vehicle_info = json.load(f)
+    if os.path.exists(configs.middle_vehicle_info_path):
+        with open(configs.middle_vehicle_info_path, "r") as f:
+            middle_vehicle_info = json.load(f)
 
     ongoing_items_map = {}
     for item in ongoing_items:

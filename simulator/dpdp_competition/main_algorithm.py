@@ -22,7 +22,7 @@ import traceback
 
 from src.utils.logging_engine import logger
 # from algorithm.algorithm_demo import scheduling
-from algorithm.vrppd.main_algorithm import scheduling
+from algorithm.src.main_algorithm import scheduling
 
 if __name__ == '__main__':
     try:
