@@ -1,8 +1,8 @@
 import json
 import os
-import folium
+# import folium
 import numpy as np
-import webbrowser as wb
+# import webbrowser as wb
 from datetime import datetime, timedelta
 import sys
 
@@ -227,19 +227,20 @@ class DVRPPD_Solver(object):
 
 
     def foliumPlot(self, customer_id_info_map):
-        vehicle_node_map = dict()
-        city_map = folium.Map(location=[39.93, 116.40], zoom_start=10)
-        for vehicleID in self._vehiclesPool:
-            if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
-                temp = []
-                for node in self._vehiclesPool[vehicleID].getCurrentRoute:
-                    cs = customer_id_info_map[node.customerID]
-                    temp.append([cs["lat"], cs["lng"]])
-                vehicle_node_map[vehicleID] = temp
-                folium.PolyLine(temp, color='black').add_to(city_map)
-        city_map.save("route.html")
-        wb.open("route.html")
+        # vehicle_node_map = dict()
+        # city_map = folium.Map(location=[39.93, 116.40], zoom_start=10)
+        # for vehicleID in self._vehiclesPool:
+        #     if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
+        #         temp = []
+        #         for node in self._vehiclesPool[vehicleID].getCurrentRoute:
+        #             cs = customer_id_info_map[node.customerID]
+        #             temp.append([cs["lat"], cs["lng"]])
+        #         vehicle_node_map[vehicleID] = temp
+        #         folium.PolyLine(temp, color='black').add_to(city_map)
+        # city_map.save("route.html")
+        # wb.open("route.html")
         # print(vehicle_node_map)
+        pass
 
 
 if __name__ == "__main__":
