@@ -109,6 +109,7 @@ class DVRPPD_Solver(object):
                 self._customersPool[customerID].gen_node_port_map()
             self._gen_object_score()
             self._print_solution()
+            # self.heuristicEngine(CPU_limit=2)
             # checker(self._vehiclesPool)
             return True
         else:
@@ -121,7 +122,10 @@ class DVRPPD_Solver(object):
                     for requestID in requests_info:
                         tw_right = datetime.strptime(requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1],
                                                      "%Y-%m-%d %H:%M:%S")
-                        tw_right += timedelta(hours=4)
+                        if len(self._vehiclesPool) == 100:
+                            tw_right += timedelta(hours=8)
+                        else:
+                            tw_right += timedelta(hours=4)
                         requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1] = str(tw_right)
                         requests_info_temp[requestID]["delivery_demand_info"]["time_window"][1] = str(tw_right)
                         requestID_temp = requestID
@@ -130,7 +134,7 @@ class DVRPPD_Solver(object):
                             requestID_temp = requestID[:_index]
                         time_out_requests[requestID_temp] = requests_info_temp[requestID]
                         self.addNewRequest2RequestsPool(requests_info_temp)
-            # self.heuristicEngine(CPU_limit=1)
+            self.heuristicEngine(CPU_limit=2)
             constructor1 = solomonInsertionHeuristic(self._vehiclesPool,
                                                      self._requestsPool,
                                                      self._customersPool,

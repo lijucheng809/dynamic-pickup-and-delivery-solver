@@ -29,7 +29,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
                  travelCost_solver: costDatabase,
                  time2Go,
                  start_time = time.time()):
-        self._source_pool = deepcopy(sourcePool(vehicles, customers, requests))
+        self._source_pool = sourcePool(vehicles, customers, requests)
         self._customers = self._source_pool.customers
         self._requests = self._source_pool.requests
         self._vehicles = self._source_pool.vehicles
@@ -38,7 +38,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                               "source_pool": deepcopy(self._source_pool)}
         self._currentSolution = {"score": objective_score,
                                  "source_pool": deepcopy(self._source_pool)}
-        self._start_time = start_time
         self.removeOperator = dict()
         self.repairOperator = dict()
         self._destroyOperator_paras = {"shaw": {"weight": 1, "score": 0, "trials": 0},
@@ -64,6 +63,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         # TODO (死参数,后续需要近一步 tuning)初始温度选择的原则，是比初始解差5%的解被接受的概率为50%。
         self._SA_cool_rate = gConfig["sa_cool_rate"]
         self._SA_temperature = -0.05 * objective_score / math.log(0.4)
+        self._start_time = time.time()
         # print(self._SA_temperature)
 
     @staticmethod
@@ -162,11 +162,11 @@ class AdaptiveLargeNeighborhoodSearch(object):
                     # print("ALNS destroy process fail!!!!!!!!!")
                     return False
                 else:
-                    for customerID in self._customers:
-                        if self._customers[customerID].getDispatchedRequestSet:
-                            for requestID in self._customers[customerID].getDispatchedRequestSet:
-                                node_temp = self._customers[customerID].getDispatchedRequestSet[requestID]
-                                assert node_temp in self._vehicles[node_temp.vehicleID].getCurrentRoute
+                    # for customerID in self._customers:
+                    #     if self._customers[customerID].getDispatchedRequestSet:
+                    #         for requestID in self._customers[customerID].getDispatchedRequestSet:
+                    #             node_temp = self._customers[customerID].getDispatchedRequestSet[requestID]
+                    #             assert node_temp in self._vehicles[node_temp.vehicleID].getCurrentRoute
                     continue
         return True
 
@@ -277,7 +277,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
         source_pool_init = deepcopy(self._source_pool)
         print("init score is:", self._bestSolution["score"], file=sys.stderr)
         while time.time() - self._start_time < CPU_limit * 60:
-            # print("iter:", total_iteration_count, "--------------------------------------")
             if total_iteration_count % gConfig["alns_segment_size"] == 0:
                 self._resetOperatorsParas()
 
@@ -326,8 +325,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 none_improve_iteration_count += 1
             if none_improve_iteration_count > gConfig["alns_none_improve_iteration"]:
                 none_improve_iteration_count = 0
-                # print("--------------------------------------------------------------------------------------------")
-                # print("重新开始")
                 source_pool_temp = deepcopy(source_pool_init)
                 self._vehicles = source_pool_temp.vehicles
                 self._customers = source_pool_temp.customers

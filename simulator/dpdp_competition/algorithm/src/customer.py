@@ -131,9 +131,6 @@ class customer(object):
         key = 1
         tip = False
         for requestID, node in self._dispatchedRequests.items():
-            # if node.requestID == "0020420068" and node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
-            #     print("ppppppppppppppppppppppppppppppppppppppppppppppppp")
-            #     tip = True
             if node not in temp_nodes:
                 q_unDispatchedNode.put((node.vehicleArriveTime, node))
                 if node.leftNode and node.leftNode.requestID != node.requestID and node.leftNode.requestID in self._dispatchedRequests or \
@@ -168,13 +165,6 @@ class customer(object):
                     seconds=gConfig["static_process_time_on_customer"])
             else:
                 earliestDepartureTime = node.vehicleArriveTime
-            # if node.vehicleID == "V_90" and self._customerID == "2445d4bd004c457d95957d6ecf77f759":
-            #     if batch_node:
-            #         for nd in batch_node:
-            #             print(nd.processTime, nd.requestID)
-            #     # if tip and not batchNode:
-            #     #     assert not tip
-            #     print("----------------------------------------------------------")
             if batch_node:
                 for nd in batch_node:
                     earliestDepartureTime += timedelta(seconds=nd.processTime)
@@ -229,15 +219,15 @@ class customer(object):
             if not flag_no_wait:
                 indexes = q_dispatchedNode.get()
                 pre_node = self._port_reserveTable[indexes[1]][-1]
-                if pre_node.vehicleDepartureTime > node.vehicleArriveTime:
+                start_process_time = node.vehicleArriveTime
+                if pre_node.vehicleDepartureTime > node.vehicleArriveTime and node.demandType != "parking":
                     # print("开始产生等待的时间")
                     node_departure_time = pre_node.vehicleDepartureTime + \
                                           timedelta(seconds=(earliestDepartureTime - node.vehicleArriveTime).seconds)
+                    start_process_time = pre_node.vehicleDepartureTime
                 else:
                     node_departure_time = earliestDepartureTime
-                    if tp == "destroy":
-                        assert node_departure_time < latest_leave_time
-                if node_departure_time < latest_leave_time:
+                if node_departure_time <= latest_leave_time:
                     right_node = self._getRightNode(node, batch_node)
                     if right_node:
                         arrive_time = node_departure_time + \
@@ -254,10 +244,10 @@ class customer(object):
                             right_node_temp.setVehicleArriveTime(arrive_time)
                     if batch_node:
                         for nd in batch_node:
-                            nd.setStartProcessTime(pre_node.vehicleDepartureTime)
+                            nd.setStartProcessTime(start_process_time)
                             nd.setVehicleDepartureTime(node_departure_time)
                     else:
-                        node.setStartProcessTime(pre_node.vehicleDepartureTime)
+                        node.setStartProcessTime(start_process_time)
                         node.setVehicleDepartureTime(node_departure_time)
                     self._port_reserveTable[indexes[1]].append(node)
                     q_dispatchedNode.put((node.vehicleDepartureTime, indexes[1]))

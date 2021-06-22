@@ -219,7 +219,7 @@ class GreedyInsertionOperator(insertOperator):
                  requests: requestPool,
                  customers: Dict[str, customer],
                  travelCost_solver):
-        self._source_pool = deepcopy(sourcePool(vehicles, customers, requests))
+        self._source_pool = sourcePool(vehicles, customers, requests)
         for customerID in self._source_pool.customers:
             self._source_pool.customers[customerID].gen_node_port_map()
         self._travelCost_solver = travelCost_solver
@@ -244,6 +244,7 @@ class GreedyInsertionOperator(insertOperator):
     def _getResource(self):
         minpq_unDispatched_request = PriorityQueue()
         available_vehicleID_set = []
+        # print(self._source_pool.requests.getUnDispatchedPool)
         for requestID in self._source_pool.requests.getUnDispatchedPool:
             creation_time = self._source_pool.requests.getUnDispatchedPool[requestID]["creation_time"]
             minpq_unDispatched_request.put((creation_time, requestID))
@@ -279,6 +280,11 @@ class GreedyInsertionOperator(insertOperator):
         if arrive_customer_time < order_creation_time:
             flag = False
         if leave_customer_time > latest_leave_time:
+            # print("requestID is:", request["requestID"],
+            #       " leave_customer_time:", leave_customer_time,
+            #       " latest_leave_time:", latest_leave_time,
+            #       "demand_type", demand_type,
+            #       "vehicleID:", pre_node.vehicleID)
             flag = False
         return {"feasible": flag, "arrive_customer_time": arrive_customer_time, "travel_cost": travel_cost}
 
@@ -422,8 +428,8 @@ class GreedyInsertionOperator(insertOperator):
         insertion_score_dict = {}
         for i in range(1, route_length + 1):
             route = self._source_pool.vehicles[vehicleID].getCurrentRoute
-            if i == 1 and route[i].demandType == "delivery":
-                continue
+            # if i == 1 and route[i].demandType == "delivery":
+            #     continue
             requestID_new = request["requestID"]
             if "-" in requestID_new:
                 _index = requestID_new.index("-")
@@ -701,7 +707,8 @@ class GreedyInsertionOperator(insertOperator):
             else:
                 """需求分配失败"""
                 print("insertion fail requestID:", requestID,
-                      "creation_time:", request["creation_time"], file=sys.stderr)
+                      " creation_time:", request["creation_time"],
+                      " tw_right：", request["pickup_demand_info"]["time_window"][1], file=sys.stderr)
                 self._fail_insertion_requests.append({requestID:
                                                           self._source_pool.requests.getUnDispatchedPool[requestID]})
                 # unDispatchedRequestsID_set.remove(requestID)
