@@ -22,11 +22,13 @@ import os
 
 
 class Configs(object):
+    MAX_SCORE = 9999999999
+
     # 算法切片的时间间隔, time interval of simulator
-    ALG_RUN_FREQUENCY = 10  # 单位分钟
+    ALG_RUN_FREQUENCY = 25  # 单位分钟
 
     # 多目标权重之间的系数
-    LAMDA = 600000
+    LAMDA = 10000
 
     # different pallet types of orders
     PALLET_TYPE_LABELS = ["PALLET", "HALF_PALLET", "BOX"]
@@ -43,7 +45,7 @@ class Configs(object):
     UNLOAD_SPEED = 0.25  # 大板/min, unit is standard pallet per minute
 
     # 靠台时间
-    DOCK_APPROACHING_TIME = 30 * 60  # unit: second
+    DOCK_APPROACHING_TIME = 7 * 60  # unit: second
 
     # 文件路径
     root_folder_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -93,6 +95,9 @@ class Configs(object):
     # 日志文件的最大数量
     MAX_LOG_FILE_NUM = 100
 
+    # 一天的秒数
+    A_DAY_TIME_SECONDS = 24 * 60 * 60
+
     # 数据集选项，列表为空则选择所有数据集，如[]，[1], [1, 2, 3], [64]
-    selected_instances = [1]
+    selected_instances = [67]
     all_test_instances = range(1, 65)

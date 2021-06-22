@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from algorithm.src.travelCost import costDatabase
 
 
 class customer_request_combination(object):
@@ -178,7 +178,7 @@ class fileProcessor(object):
                                                          / (max_distance - min_distance)
             route_cost_map[pd_pair]["normal_travelTime"] = (route_cost_map[pd_pair]["travel_time"] - min_travelTime) \
                                                            / (max_travelTime - min_travelTime)
-        with open("data/dynamic_pickup_and_delivery_testdata/route_map/route_cost_map.json", "w") as f:
+        with open(route_cost_json_file, "w") as f:
             json.dump(route_cost_map, f, indent=4)
 
 

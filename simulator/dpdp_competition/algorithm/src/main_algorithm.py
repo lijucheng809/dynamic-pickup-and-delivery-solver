@@ -4,29 +4,25 @@ from datetime import datetime, timedelta
 import time
 import os
 
-from simulator.dpdp_competition.algorithm.src.customer import customer
-from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPD_Solver
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from algorithm.src.customer import customer
+from algorithm.src.DVRPPDSolver import DVRPPD_Solver
+from algorithm.src.vehicle import vehicle
+from algorithm.data_transfomer import data_transfomer
+from algorithm.src.travelCost import costDatabase
+from algorithm.conf.configs import configs
+from algorithm.src.utlis import fileProcessor
+import algorithm.src.getConfig
 
-import simulator.dpdp_competition.algorithm.src.getConfig
-
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+gConfig = algorithm.src.getConfig.get_config()
 
 
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
     # tips = 1  # 取前六个需求做测试
     time_out_requests = {}
-    if os.path.exists(configs.time_out_requests):
-        with open(configs.time_out_requests, "r") as f:
+    if os.path.exists(configs.time_out_requests_path):
+        with open(configs.time_out_requests_path, "r") as f:
             time_out_requests = json.load(f)
     for orderID in order_id_info_map:
-        # if tips == 5:
-        #     break
-        # tips += 1
-
         def getPDCustomerInfo(PD_customer_id):
             customer_info = customer_id_info_map[order_id_info_map[orderID][PD_customer_id]]
             customerID = order_id_info_map[orderID][PD_customer_id]
@@ -103,7 +99,6 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
         capacity = vehicle_info["capacity"]
         update_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(vehicle_info["update_time"]))
         time_now = datetime.strptime(update_time, "%Y-%m-%d %H:%M:%S")
-        # time2Go = time_now + timedelta(minutes=gConfig["time_2_go"])
         time2Go = time_now
         if not next_period_vehicle_go_time:
             next_period_vehicle_go_time = time2Go
@@ -142,14 +137,6 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                                            vehicle_info["destination"]["factory_id"])
                 mileage = travel_cost["distance"]
             for item_id in carrying_items:
-                # order_id = ongoing_items_map[item_id]["order_id"]
-                # order_id_temp = order_id
-                # if order_id_temp in request_info["requests_items_map"]:
-                #     order_id_temp = order_id_temp + vehicleID
-                # if order_id_temp not in request_id_on_order:
-                #     request_id_on_order.append(order_id_temp)
-                # if order_id not in requests_items_map_temp:
-                #     requests_items_map_temp[order_id] = {"delivery_only": []}
                 order_id = ongoing_items_map[item_id]["order_id"] + vehicleID
                 if order_id not in request_id_on_order:
                     request_id_on_order.append(order_id)
@@ -161,12 +148,6 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                           ongoing_items_map[item_id]["delivery_factory_id"],
                                           customer_id_info_map)
                 load_volume += ongoing_items_map[item_id]["demand"]
-            # for order_id in requests_items_map_temp:
-            #     if order_id in request_info["requests_items_map"]:
-            #         order_id_new = order_id + vehicleID
-            #         requests_items_map[order_id_new] = requests_items_map_temp[order_id]
-            #     else:
-            #         requests_items_map[order_id] = requests_items_map_temp[order_id]
             requests_items_map.update(requests_items_map_temp)
             arrive_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(vehicle_info["destination"]["arrive_time"]))
             arrive_time = datetime.strptime(arrive_time, "%Y-%m-%d %H:%M:%S")
@@ -215,8 +196,8 @@ def scheduling():
     dvrppd_Solver.constructEngine(time2Go=time_2_go)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim - start_time) / 60. - 0.5  # 留0.5秒输出数据
-    # if len(request_info["requests"]) > 3:
-        # dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    # if len(request_info["requests"]) > 2:
+    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool

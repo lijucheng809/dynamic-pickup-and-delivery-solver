@@ -6,17 +6,17 @@ import math
 from datetime import datetime, timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.src.customer import customer
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
+from algorithm.src.vehicle import vehicle
+from algorithm.src.customer import customer
+from algorithm.src.requestPool import requestPool
+from algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
     RegretInsertionOperator
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
+from algorithm.src.travelCost import costDatabase
+from algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
 
-import simulator.dpdp_competition.algorithm.src.getConfig
+import algorithm.src.getConfig
 
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+gConfig = algorithm.src.getConfig.get_config()
 
 
 class AdaptiveLargeNeighborhoodSearch(object):
@@ -275,7 +275,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         none_improve_iteration_count = 0
         last_current_score = None
         source_pool_init = deepcopy(self._source_pool)
-        print("init score is:", self._bestSolution["score"], file=sys.stderr)
+        # print("init score is:", self._bestSolution["score"], file=sys.stderr)
         while time.time() - self._start_time < CPU_limit * 60:
             # print("iter:", total_iteration_count, "--------------------------------------")
             if total_iteration_count % gConfig["alns_segment_size"] == 0:
@@ -336,7 +336,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
             # print("iteration is: ", total_iteration_count,
             #       " best score: ", self._bestSolution["score"],
             #       " current score: ", self._currentSolution["score"])
-        print("ALNS score is:", self._bestSolution["score"], file=sys.stderr)
+        # print("ALNS score is:", self._bestSolution["score"], file=sys.stderr)
     @property
     def outputSolution(self):
         return self._bestSolution

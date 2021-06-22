@@ -1,21 +1,21 @@
 import json
 import os
-import folium
+# import folium
 import numpy as np
-import webbrowser as wb
+# import webbrowser as wb
 from datetime import datetime, timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
-from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
-from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from algorithm.src.requestPool import requestPool
+from algorithm.src.constructor import solomonInsertionHeuristic
+from algorithm.src.travelCost import costDatabase
+from algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
+from algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
+from algorithm.src.utlis import checker, DateEncoder
+from algorithm.conf.configs import configs
 
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+import algorithm.src.getConfig
+gConfig = algorithm.src.getConfig.get_config()
 
 
 class DVRPPD_Solver(object):
@@ -108,7 +108,7 @@ class DVRPPD_Solver(object):
             for customerID in self._customersPool:
                 self._customersPool[customerID].gen_node_port_map()
             self._gen_object_score()
-            self._print_solution()
+            # self._print_solution()
             # checker(self._vehiclesPool)
             return True
         else:
@@ -130,25 +130,25 @@ class DVRPPD_Solver(object):
                             requestID_temp = requestID[:_index]
                         time_out_requests[requestID_temp] = requests_info_temp[requestID]
                         self.addNewRequest2RequestsPool(requests_info_temp)
-            # self.heuristicEngine(CPU_limit=1)
+            self.heuristicEngine(CPU_limit=1)
             constructor1 = solomonInsertionHeuristic(self._vehiclesPool,
                                                      self._requestsPool,
                                                      self._customersPool,
                                                      self._travelCost_solver)
             if constructor1.solve():
-                if os.path.exists(configs.time_out_requests):
-                    with open(configs.time_out_requests, "r") as f:
+                if os.path.exists(configs.time_out_requests_path):
+                    with open(configs.time_out_requests_path, "r") as f:
                         time_out_requests_old = json.load(f)
                     for requestID in time_out_requests:
                         if requestID not in time_out_requests_old:
                             time_out_requests_old[requestID] = time_out_requests[requestID]
-                    with open(configs.time_out_requests, "w") as f:
+                    with open(configs.time_out_requests_path, "w") as f:
                         json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
                 else:
-                    with open(configs.time_out_requests, "w") as f:
+                    with open(configs.time_out_requests_path, "w") as f:
                         json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
                 self._vehiclesPool, self._customersPool, self._requestsPool = constructor1.outputSolution
-                self._print_solution()
+                # self._print_solution()
                 return True
             else:
                 # fail_insertion_requests，存到本地
@@ -227,19 +227,20 @@ class DVRPPD_Solver(object):
 
 
     def foliumPlot(self, customer_id_info_map):
-        vehicle_node_map = dict()
-        city_map = folium.Map(location=[39.93, 116.40], zoom_start=10)
-        for vehicleID in self._vehiclesPool:
-            if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
-                temp = []
-                for node in self._vehiclesPool[vehicleID].getCurrentRoute:
-                    cs = customer_id_info_map[node.customerID]
-                    temp.append([cs["lat"], cs["lng"]])
-                vehicle_node_map[vehicleID] = temp
-                folium.PolyLine(temp, color='black').add_to(city_map)
-        city_map.save("route.html")
-        wb.open("route.html")
+        # vehicle_node_map = dict()
+        # city_map = folium.Map(location=[39.93, 116.40], zoom_start=10)
+        # for vehicleID in self._vehiclesPool:
+        #     if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
+        #         temp = []
+        #         for node in self._vehiclesPool[vehicleID].getCurrentRoute:
+        #             cs = customer_id_info_map[node.customerID]
+        #             temp.append([cs["lat"], cs["lng"]])
+        #         vehicle_node_map[vehicleID] = temp
+        #         folium.PolyLine(temp, color='black').add_to(city_map)
+        # city_map.save("route.html")
+        # wb.open("route.html")
         # print(vehicle_node_map)
+        pass
 
 
 if __name__ == "__main__":

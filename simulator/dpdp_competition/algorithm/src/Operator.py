@@ -7,15 +7,15 @@ from copy import deepcopy
 import sys
 from queue import PriorityQueue
 
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, sourcePool, checks
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.customer import customer
+from algorithm.src.vehicle import vehicle
+from algorithm.src.travelCost import costDatabase
+from algorithm.src.utlis import customer_request_combination, sourcePool, checks
+from algorithm.src.requestPool import requestPool
+from algorithm.src.customer import customer
 
-import simulator.dpdp_competition.algorithm.src.getConfig
+import algorithm.src.getConfig
 
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+gConfig = algorithm.src.getConfig.get_config()
 
 
 class insertOperator(metaclass=ABCMeta):
@@ -684,8 +684,8 @@ class GreedyInsertionOperator(insertOperator):
 
             else:
                 """需求分配失败"""
-                print("insertion fail requestID:", requestID,
-                      "creation_time:", request["creation_time"], file=sys.stderr)
+                # print("insertion fail requestID:", requestID,
+                #       "creation_time:", request["creation_time"], file=sys.stderr)
                 self._fail_insertion_requests.append({requestID:
                                                           self._source_pool.requests.getUnDispatchedPool[requestID]})
                 # unDispatchedRequestsID_set.remove(requestID)

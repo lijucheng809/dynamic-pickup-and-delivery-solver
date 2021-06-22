@@ -19,23 +19,24 @@
 # THE SOFTWARE
 
 import datetime
+import json
 import os
 import sys
 import time
 
-from simulator.dpdp_competition.src.common.dispatch_result import DispatchResult
-from simulator.dpdp_competition.src.common.input_info import InputInfo
-from simulator.dpdp_competition.src.conf.configs import Configs
-from simulator.dpdp_competition.src.simulator.history import History
-from simulator.dpdp_competition.src.simulator.vehicle_simulator import VehicleSimulator
-from simulator.dpdp_competition.src.utils.checker import Checker
-from simulator.dpdp_competition.src.utils.evaluator import Evaluator
-from simulator.dpdp_competition.src.utils.json_tools import convert_input_info_to_json_files
-from simulator.dpdp_competition.src.utils.json_tools import get_output_of_algorithm
-from simulator.dpdp_competition.src.utils.json_tools import subprocess_function, get_algorithm_calling_command
-from simulator.dpdp_competition.src.utils.logging_engine import logger
-from simulator.dpdp_competition.src.utils.tools import get_item_dict_from_order_dict, get_order_items_to_be_dispatched_of_cur_time
-from simulator.dpdp_competition.src.utils.tools import get_item_list_of_vehicles
+from src.common.dispatch_result import DispatchResult
+from src.common.input_info import InputInfo
+from src.conf.configs import Configs
+from src.simulator.history import History
+from src.simulator.vehicle_simulator import VehicleSimulator
+from src.utils.checker import Checker
+from src.utils.evaluator import Evaluator
+from src.utils.json_tools import convert_input_info_to_json_files
+from src.utils.json_tools import get_output_of_algorithm
+from src.utils.json_tools import subprocess_function, get_algorithm_calling_command
+from src.utils.logging_engine import logger
+from src.utils.tools import get_item_dict_from_order_dict, get_order_items_to_be_dispatched_of_cur_time
+from src.utils.tools import get_item_list_of_vehicles
 
 
 class SimulateEnvironment(object):
@@ -77,6 +78,9 @@ class SimulateEnvironment(object):
 
         # 目标函数值, objective
         self.total_score = sys.maxsize
+
+        # 算法调用命令
+        self.algorithm_calling_command = ''
 
     # 初始化历史记录
     def __ini_history(self):
@@ -130,6 +134,10 @@ class SimulateEnvironment(object):
 
         # 根据self.history 计算指标
         self.total_score = Evaluator.calculate_total_score(self.history, self.route_map, len(self.id_to_vehicle))
+
+        vehicle_order_list = self.history.get_vehicle_order_history()
+        with open("test.json", "w") as f:
+            json.dump(vehicle_order_list, f, indent=4)
 
     # 数据更新
     def update_input(self):
@@ -221,9 +229,11 @@ class SimulateEnvironment(object):
         convert_input_info_to_json_files(input_info)
 
         # 2. Run the algorithm
-        command = get_algorithm_calling_command()
+        if not self.algorithm_calling_command:
+            self.algorithm_calling_command = get_algorithm_calling_command()
         time_start_algorithm = time.time()
-        used_seconds, message = subprocess_function(command)
+        used_seconds, message = subprocess_function(self.algorithm_calling_command)
+
         # 3. parse the output json of the algorithm
         if Configs.ALGORITHM_SUCCESS_FLAG in message:
             if (time_start_algorithm < os.stat(Configs.algorithm_output_destination_path).st_mtime < time.time()
@@ -233,11 +243,12 @@ class SimulateEnvironment(object):
                 dispatch_result = DispatchResult(vehicle_id_to_destination, vehicle_id_to_planned_route)
                 return used_seconds, dispatch_result
             else:
-                logger.error('output.json is not the newest')
+                logger.error("Output_json files from the algorithm is not the newest.")
                 sys.exit(-1)
         else:
             logger.error(message)
-            raise ValueError('未寻获算法输出成功标识SUCCESS')
+            logger.error("Can not catch the 'SUCCESS' from the algorithm. 未寻获算法输出成功标识'SUCCESS'。")
+            sys.exit(-1)
 
     # 判断是否完成所有订单的派发
     def complete_the_dispatch_of_all_orders(self):
