@@ -1,6 +1,8 @@
 import json
 import os
 # import folium
+import time
+
 import numpy as np
 # import webbrowser as wb
 from datetime import datetime, timedelta
@@ -90,11 +92,26 @@ class DVRPPD_Solver(object):
         """
         pass
 
+    @staticmethod
+    def _gen_time_out_requests_json(time_out_requests):
+        if os.path.exists(configs.time_out_requests):
+            with open(configs.time_out_requests, "r") as f:
+                time_out_requests_old = json.load(f)
+            for requestID in time_out_requests:
+                if requestID not in time_out_requests_old:
+                    time_out_requests_old[requestID] = time_out_requests[requestID]
+            with open(configs.time_out_requests, "w") as f:
+                json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
+        else:
+            with open(configs.time_out_requests, "w") as f:
+                json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
+
     def constructEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")):
         """
         所有requests都要得到分配，并且所有route要满足时间窗，载重等约束条件
         """
         # TODO 需要完善如果插入失败后的预备方案
+        start_time = time.time()
         for vehicleID in self._vehiclesPool:
             if not self._scheduleNormal(vehicleID) or not self._currentRouteFeasible(vehicleID):
                 self._rearrangeRoute(vehicleID)
@@ -109,9 +126,6 @@ class DVRPPD_Solver(object):
                 self._customersPool[customerID].gen_node_port_map()
             self._gen_object_score()
             self._print_solution()
-            # self.heuristicEngine(CPU_limit=2)
-            # checker(self._vehiclesPool)
-            return True
         else:
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             fail_insertion_requests = constructor.get_fail_insertion_requests
@@ -134,47 +148,29 @@ class DVRPPD_Solver(object):
                             requestID_temp = requestID[:_index]
                         time_out_requests[requestID_temp] = requests_info_temp[requestID]
                         self.addNewRequest2RequestsPool(requests_info_temp)
-            self.heuristicEngine(CPU_limit=2)
-            constructor1 = solomonInsertionHeuristic(self._vehiclesPool,
-                                                     self._requestsPool,
-                                                     self._customersPool,
-                                                     self._travelCost_solver)
-            if constructor1.solve():
-                if os.path.exists(configs.time_out_requests):
-                    with open(configs.time_out_requests, "r") as f:
-                        time_out_requests_old = json.load(f)
-                    for requestID in time_out_requests:
-                        if requestID not in time_out_requests_old:
-                            time_out_requests_old[requestID] = time_out_requests[requestID]
-                    with open(configs.time_out_requests, "w") as f:
-                        json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
-                else:
-                    with open(configs.time_out_requests, "w") as f:
-                        json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
-                self._vehiclesPool, self._customersPool, self._requestsPool = constructor1.outputSolution
-                self._print_solution()
-                return True
-            else:
-                # fail_insertion_requests，存到本地
-                # 等下一个时间点，再尝试进行插入
-                # 12：00 fail, 12:10 fail, 12:20,fail， 但是呢，这个订单是在12:04创建，超过30分种都没插入成功的话，这个时候就需要
-                # 强行插入了，【12：04, 16:04】 , 16:10完成， 【12：04， 16：10】
-                # return True
-                pass
-        return False
+                self._gen_time_out_requests_json(time_out_requests)
+            time_now = time.time()
+            if time_now - start_time < 4 * 60:
+                self.heuristicEngine(CPU_limit=2, mission="repair")
+            self._print_solution()
 
-    def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"), CPU_limit=10):
+    def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+                        CPU_limit=10,
+                        mission="improvement"):
         heuristicSolver = AdaptiveLargeNeighborhoodSearch(self._vehiclesPool,
                                                           self._requestsPool,
                                                           self._customersPool,
                                                           self.objective_score,
                                                           self._travelCost_solver,
-                                                          time2Go=time2Go)
+                                                          time2Go=time2Go,
+                                                          mission=mission)
         heuristicSolver.solve(CPU_limit)
         solution = heuristicSolver.outputSolution
-        self._vehiclesPool = solution["source_pool"].vehicles
-        self._requestsPool = solution["source_pool"].requests
-        self._customersPool = solution["source_pool"].customers
+        if solution["score"] != np.infty:
+            self._vehiclesPool = solution["source_pool"].vehicles
+            self._requestsPool = solution["source_pool"].requests
+            self._customersPool = solution["source_pool"].customers
+            self._gen_object_score()
 
     def _print_solution(self):
         objective_score = 0
@@ -228,7 +224,6 @@ class DVRPPD_Solver(object):
             if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
                 self._vehiclesPool[vehicleID].updateTravelCost(self._travelCost_solver)
                 self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
-
 
     def foliumPlot(self, customer_id_info_map):
         # vehicle_node_map = dict()

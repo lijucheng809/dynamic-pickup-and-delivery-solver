@@ -5,6 +5,7 @@ from simulator.dpdp_competition.algorithm.conf.configs import configs
 from copy import deepcopy
 import os
 
+
 def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=5):
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
     q_small_split_num = len(request_item_map["q_small"]) // spilt_num

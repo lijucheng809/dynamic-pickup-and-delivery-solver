@@ -228,9 +228,9 @@ def scheduling():
     dvrppd_Solver.constructEngine(time2Go=time_2_go)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim - start_time) / 60. - 0.5  # 留0.5秒输出数据
-    # if len(request_info["requests"]) > 3:
-    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
-    # dvrppd_Solver.foliumPlot(customer_id_info_map)
+    if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3:
+        dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
     data_transfomer.__solution_algo_2_sim(vehicle_route,
@@ -242,6 +242,4 @@ def scheduling():
 
 if __name__ == "__main__":
     scheduling()
-    # print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(1624206444.0)))
-    # time1 = datetime.strptime("00:47:24", "%H:%M:%S")
-    # print(time1+timedelta(minutes=54))
+    # print(datetime.now().timestamp())

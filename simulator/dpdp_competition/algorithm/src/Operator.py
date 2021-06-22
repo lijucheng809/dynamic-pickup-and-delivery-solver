@@ -1,4 +1,5 @@
 import random
+import time
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List
 from datetime import datetime, timedelta
@@ -540,24 +541,23 @@ class GreedyInsertionOperator(insertOperator):
 
     def insert(self,
                time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
-               tp="constructor") -> bool:
+               tp="constructor",
+               start_run_time=time.time(),
+               CPU_limit=10) -> bool:
         self._vehicle_customer_match()
         available_vehicleID_set, minpq_unDispatched_request = self._getResource()
-        # print(unDispatchedRequestsID_set)
         while not minpq_unDispatched_request.empty():
-            # insertion_flag = False  # 判断是否插入成功
-            # insertion_score_dict = dict()
-            # best_score = np.infty
             requestID = minpq_unDispatched_request.get()[1]
             request = self._source_pool.requests.getUnDispatchedPool[requestID]
+            # print("total requests:", minpq_unDispatched_request.qsize())
             # print("当前requestID:", requestID, "creation_time:", request["creation_time"])
-            # print("当前需要决定的requestID:", requestID)
             source_pool_temp = deepcopy(self._source_pool)
-            # random.shuffle(available_vehicleID_set)
             insertion_flag = False  # 判断是否插入成功
             insertion_score_dict = dict()
             best_score = np.infty
             for vehicleID in available_vehicleID_set:
+                if tp == "heuristic" and time.time() - start_run_time > CPU_limit * 60:
+                    return False
                 pickup_customer_id = request["pickup_demand_info"]["customer_id"]
                 delivery_customer_id = request["delivery_demand_info"]["customer_id"]
                 if request["pickup_demand_info"]["volume"] > self._source_pool.vehicles[vehicleID].getCapacity:
@@ -696,13 +696,9 @@ class GreedyInsertionOperator(insertOperator):
 
             if insertion_flag:
                 """ 选择最优结果的那一辆车"""
-                # unDispatchedRequestsID_set.remove(insertion_score_dict["requestID"])
-                # print(unDispatchedRequestsID_set)
                 self._source_pool = insertion_score_dict["sourcePool"]
                 self._source_pool.requests.updateDispatchedRequestPool(insertion_score_dict["requestID"], "add")
                 self._vehicle_customer_match()
-                # checks().print_solution(self._source_pool.vehicles)
-                # print("------------------------------------------------------------------------")
 
             else:
                 """需求分配失败"""
@@ -711,12 +707,10 @@ class GreedyInsertionOperator(insertOperator):
                       " tw_right：", request["pickup_demand_info"]["time_window"][1], file=sys.stderr)
                 self._fail_insertion_requests.append({requestID:
                                                           self._source_pool.requests.getUnDispatchedPool[requestID]})
-                # unDispatchedRequestsID_set.remove(requestID)
                 source_pool_temp.requests.getUnDispatchedPool.pop(requestID)
                 self._source_pool = deepcopy(source_pool_temp)
                 self._vehicle_customer_match()
         if self._fail_insertion_requests:
-            # print(self._fail_insertion_requests)
             return False
         return True
 
@@ -738,6 +732,7 @@ class GreedyInsertionOperator(insertOperator):
         return score
 
     def outputSolution(self):
+        self._vehicle_customer_match()
         return self._source_pool.vehicles, self._source_pool.customers, self._source_pool.requests
 
 
