@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timedelta
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 from copy import deepcopy
-
+import os
 
 def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=5):
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
@@ -238,6 +238,8 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
             break
     vehicle_start_end_pair = {}
     if flag:
+        if os.path.exists(configs.time_out_requests):
+            os.remove(configs.time_out_requests)
         for vehicle_info in vehicles_info:
             start_pos = vehicle_info["cur_factory_id"]
             if destination[vehicle_info["id"]]:
