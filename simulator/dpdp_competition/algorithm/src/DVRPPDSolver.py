@@ -146,7 +146,7 @@ class DVRPPD_Solver(object):
                         if "-" in requestID:
                             _index = requestID.index("-")
                             requestID_temp = requestID[:_index]
-                        time_out_requests[requestID_temp] = requests_info_temp[requestID_temp]
+                        time_out_requests[requestID_temp] = requests_info_temp[requestID]
                         self.addNewRequest2RequestsPool(requests_info_temp)
                 self._gen_time_out_requests_json(time_out_requests)
             time_now = time.time()
