@@ -115,7 +115,7 @@ class customer(object):
 
         return right_node
 
-    def rearrangeReservedPort(self, tp, travelCost_solver=costDatabase()):
+    def rearrangeReservedPort(self, tp="normal", travelCost_solver=costDatabase()):
         """
         当有新的装卸需求插入时，可能会打乱当前卡位的分配方案，需要对车辆进行重新分配卡位，按照先到先服务原则
         :return:
@@ -128,7 +128,6 @@ class customer(object):
         batchNode = {}
         temp_nodes = set()
         key = 1
-        tip = False
         for requestID, node in self._dispatchedRequests.items():
             if node not in temp_nodes:
                 q_unDispatchedNode.put((node.vehicleArriveTime, node))
@@ -182,9 +181,16 @@ class customer(object):
             if node.vehicleArriveTime < order_creation_time:
                 return None
             if earliestDepartureTime > latest_leave_time:
-                # if tp == "destroy":
-                #     assert earliestDepartureTime < latest_leave_time
-                return None
+                if tp == "gen_fixed_route":
+                    delta = (earliestDepartureTime - latest_leave_time).seconds
+                    latest_leave_time += timedelta(seconds=delta*2)
+                    if batch_node:
+                        for nd in batch_node:
+                            nd.timeWindow[1] = str(latest_leave_time)
+                    else:
+                        node.timeWindow[1] = str(latest_leave_time)
+                else:
+                    return None
 
             for i in range(self._port_num):
                 if len(self._port_reserveTable[i]) == 0:
@@ -229,6 +235,15 @@ class customer(object):
                     start_process_time = pre_node.vehicleDepartureTime
                 else:
                     node_departure_time = earliestDepartureTime
+                if node_departure_time > latest_leave_time or earliestDepartureTime > latest_leave_time \
+                        and tp == "gen_fixed_route":
+                    delta = (earliestDepartureTime - latest_leave_time).seconds
+                    latest_leave_time += timedelta(seconds=delta * 2)
+                    if batch_node:
+                        for nd in batch_node:
+                            nd.timeWindow[1] = str(latest_leave_time)
+                    else:
+                        node.timeWindow[1] = str(latest_leave_time)
                 if node_departure_time <= latest_leave_time:
                     right_node = self._getRightNode(node, batch_node)
                     if right_node:
@@ -254,7 +269,7 @@ class customer(object):
                     self._port_reserveTable[indexes[1]].append(node)
                     q_dispatchedNode.put((node.vehicleDepartureTime, indexes[1]))
                 else:
-                    # print("等待时间过长-------------------------------")
+                    print(node_departure_time, latest_leave_time)
                     return None
 
         self.gen_node_port_map()

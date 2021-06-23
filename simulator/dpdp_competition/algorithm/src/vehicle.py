@@ -280,7 +280,7 @@ class vehicle(object):
             self.updateVolume(volume)
             if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
                 customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
-            flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node)
+            flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node, tp="gen_fixed_route")
             if not flag:
                 # assert flag
                 print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)

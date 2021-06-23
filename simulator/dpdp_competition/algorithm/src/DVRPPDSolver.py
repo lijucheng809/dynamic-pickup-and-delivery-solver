@@ -172,7 +172,7 @@ class DVRPPD_Solver(object):
             self._vehiclesPool = solution["source_pool"].vehicles
             self._requestsPool = solution["source_pool"].requests
             self._customersPool = solution["source_pool"].customers
-            self._gen_object_score()
+        self._gen_object_score()
 
     def _print_solution(self):
         objective_score = 0
