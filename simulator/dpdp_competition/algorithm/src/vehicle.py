@@ -11,10 +11,6 @@ from simulator.dpdp_competition.algorithm.src.utlis import customer_request_comb
     feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
-import simulator.dpdp_competition.algorithm.src.getConfig
-
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
-
 
 class vehicle(object):
     def __init__(self,
@@ -42,7 +38,7 @@ class vehicle(object):
         self._status = status
         self._position = position
         self._finishServedCustomerList = []
-        self._staticServeTimeOnCustomer = gConfig["static_process_time_on_customer"]
+        self._staticServeTimeOnCustomer = configs.static_process_time_on_customer
         self._currentTravelCost = 0
         self._update_time = None
         self._mileage = mileage
@@ -96,7 +92,7 @@ class vehicle(object):
                 travel_cost = travelCost_solver.getTravelCost(node1.customerID, node2.customerID)
                 total_distance += travel_cost["distance"]
                 total_travelTime += travel_cost["travel_time"]
-            weight = gConfig["weighted_objective_function"]
+            weight = configs.weighted_objective_function
             self._currentTravelCost = weight * total_distance + (1 - weight) * total_travelTime
         else:
             self._currentTravelCost = 0

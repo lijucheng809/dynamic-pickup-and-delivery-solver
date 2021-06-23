@@ -3,8 +3,6 @@ import json
 from datetime import datetime
 
 from simulator.dpdp_competition.algorithm.conf.configs import configs
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class travelCost(metaclass=ABCMeta):

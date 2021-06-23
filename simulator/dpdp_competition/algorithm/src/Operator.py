@@ -13,10 +13,7 @@ from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, sourcePool, checks
 from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
 from simulator.dpdp_competition.algorithm.src.customer import customer
-
-import simulator.dpdp_competition.algorithm.src.getConfig
-
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 class insertOperator(metaclass=ABCMeta):
@@ -52,7 +49,7 @@ class ShawRemovalOperator(removeOperator):
         max_arriveTime = -np.infty
         min_volume = np.infty
         max_volume = -np.infty
-        startTime = datetime.strptime(gConfig["date"] + " " + gConfig["time"], "%Y-%m-%d %H:%M:%S")
+        startTime = datetime.strptime(configs.date + " " + configs.time, "%Y-%m-%d %H:%M:%S")
         for vehicleID in self._vehicles:
             if len(self._vehicles[vehicleID].getCurrentRoute) > 1:
                 for i in range(1, len(self._vehicles[vehicleID].getCurrentRoute)):
@@ -94,9 +91,9 @@ class ShawRemovalOperator(removeOperator):
                                     - request_2.brotherNode.vehicleArriveTime_normal)
         diff_volume_p1_p2 = abs(request_1.volume_normal - request_2.volume_normal)
 
-        distance_weight = gConfig["shaw_removal_distance_weight"]
-        travelTime_weight = gConfig["shaw_removal_travel_time_weight"]
-        demand_weight = gConfig["shaw_removal_demand_weight"]
+        distance_weight = configs.shaw_removal_distance_weight
+        travelTime_weight = configs.shaw_removal_travel_time_weight
+        demand_weight = configs.shaw_removal_demand_weight
         R = distance_weight * (distance_d1_d2 + distance_p1_p2) \
             + travelTime_weight * (diff_arriveTime_d1_d2 + diff_arriveTime_p1_p2) \
             + demand_weight * diff_volume_p1_p2
@@ -131,7 +128,7 @@ class ShawRemovalOperator(removeOperator):
                 node_R_map[node2] = R
             node_R_map = sorted(node_R_map.items(), key=lambda x: x[1], reverse=False)
             random_index = int(
-                np.power(np.random.rand(), gConfig["shaw_removal_randomness_value"]) * (len(node_R_map) - 1))
+                np.power(np.random.rand(), configs.shaw_removal_randomness_value) * (len(node_R_map) - 1))
             node_new = node_R_map[random_index][0]
             removals[node_new] = unSelectNodes[node_new]
             unSelectNodes.pop(node_new)
@@ -202,7 +199,7 @@ class WorstRemovalOperator(removeOperator):
                     continue
             node_cost_map = sorted(node_cost_map.items(), key=lambda x: x[1], reverse=True)
             random_index = int(
-                np.power(np.random.rand(), gConfig["worst_removal_randomness_value"]) * (len(node_cost_map) - 1))
+                np.power(np.random.rand(), configs.worst_removal_randomness_value) * (len(node_cost_map) - 1))
             node_new = node_cost_map[random_index][0]
             indexes = self._pickupNodeIndex[node_new]
             node_new1 = self._initVehicles[indexes["vehicle"]].getCurrentRoute[indexes["routeIndex"]]
@@ -276,7 +273,7 @@ class GreedyInsertionOperator(insertOperator):
         arrive_customer_time = pre_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
         leave_customer_time = arrive_customer_time + timedelta(seconds=request[demand_info]["process_time"])
         if pre_node.customerID != target_customer_id:
-            leave_customer_time += timedelta(seconds=gConfig["static_process_time_on_customer"])
+            leave_customer_time += timedelta(seconds=configs.static_process_time_on_customer)
         flag = True
         if arrive_customer_time < order_creation_time:
             flag = False
@@ -401,6 +398,11 @@ class GreedyInsertionOperator(insertOperator):
                 pickup_flag = True
                 break
             if node.customerID == pickup_customer_id and not pickup_flag:
+                if index < len(route)-1 and "-" not in request["requestID"] and "-" in node.requestID \
+                        and "-" in route[index+1].requestID:
+                    index1, index2 = node.requestID.index("-"),  route[index+1].requestID.index("-")
+                    if node.requestID[:index1] == route[index+1].requestID[:index2]:
+                        continue
                 if self._capacity_constrain(request, vehicleID, index) \
                         and self._time_window_constrain(node, pickup_customer_id, "pickup", request)["feasible"]:
                     pickup_flag = True
@@ -429,8 +431,6 @@ class GreedyInsertionOperator(insertOperator):
         insertion_score_dict = {}
         for i in range(1, route_length + 1):
             route = self._source_pool.vehicles[vehicleID].getCurrentRoute
-            # if i == 1 and route[i].demandType == "delivery":
-            #     continue
             requestID_new = request["requestID"]
             if "-" in requestID_new:
                 _index = requestID_new.index("-")
@@ -439,6 +439,11 @@ class GreedyInsertionOperator(insertOperator):
                 continue
             if 1 < i < route_length-1 and route[i-1].customerID == route[i+1].customerID:
                 continue
+            if 1 < i < route_length-1 and "-" in route[i-1].requestID and "-" in route[i+1].requestID:
+                index_1 = route[i-1].requestID.index("-")
+                index_2 = route[i+1].requestID.index("-")
+                if route[i-1].requestID[:index_1] == route[i+1].requestID[:index_2]:
+                    continue
             # 容量约束
             if not self._capacity_constrain(request, vehicleID, i - 1):
                 continue
@@ -540,7 +545,7 @@ class GreedyInsertionOperator(insertOperator):
         return insertion_score_dict
 
     def insert(self,
-               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                tp="constructor",
                start_run_time=time.time(),
                CPU_limit=10) -> bool:
@@ -556,7 +561,7 @@ class GreedyInsertionOperator(insertOperator):
             insertion_score_dict = dict()
             best_score = np.infty
             for vehicleID in available_vehicleID_set:
-                if tp == "heuristic" and time.time() - start_run_time > CPU_limit * 60:
+                if time.time() - start_run_time > CPU_limit * 60:
                     return False
                 pickup_customer_id = request["pickup_demand_info"]["customer_id"]
                 delivery_customer_id = request["delivery_demand_info"]["customer_id"]
@@ -705,6 +710,8 @@ class GreedyInsertionOperator(insertOperator):
                 print("insertion fail requestID:", requestID,
                       " creation_time:", request["creation_time"],
                       " tw_right：", request["pickup_demand_info"]["time_window"][1], file=sys.stderr)
+                if tp == "heuristic":
+                    return False
                 self._fail_insertion_requests.append({requestID:
                                                           self._source_pool.requests.getUnDispatchedPool[requestID]})
                 source_pool_temp.requests.getUnDispatchedPool.pop(requestID)
@@ -755,7 +762,7 @@ class RegretInsertionOperator(GreedyInsertionOperator):
             del candidate_[len(candidate_) - 1]
 
     def insert(self,
-               time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                tp="constructor") -> bool:
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         # print(unDispatchedRequestsID_set)

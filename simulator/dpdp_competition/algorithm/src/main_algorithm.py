@@ -12,9 +12,6 @@ from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
     feasibleRearrangePortAssignmentSchedule
-import simulator.dpdp_competition.algorithm.src.getConfig
-
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
@@ -84,8 +81,15 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
                              "finish_time": None}}
         if orderID in time_out_requests:
             dvrppd_Solver.addNewRequest2RequestsPool({orderID: time_out_requests[orderID]})
-            continue
         else:
+            if "-" in orderID:
+                index_ = orderID.index("-")
+                orderID_new = orderID[:index_]
+                if orderID_new in time_out_requests:
+                    request[orderID]["pickup_demand_info"]["time_window"][1] = \
+                        time_out_requests[orderID_new]["pickup_demand_info"]["time_window"][1]
+                    request[orderID]["delivery_demand_info"]["time_window"][1] = \
+                        time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
             dvrppd_Solver.addNewRequest2RequestsPool(request)
 
 
@@ -203,7 +207,7 @@ def scheduling():
     start_time = time.time()
     dvrppd_Solver = DVRPPD_Solver()
     middle_vehicle_info = None
-    with open(configs.customer_info_path,  "r") as f:
+    with open(configs.customer_info_path, "r") as f:
         customer_id_info_map = json.load(f)
     with open(configs.vehicle_info_path, "r") as f:
         vehicles_info = json.load(f)
@@ -224,12 +228,12 @@ def scheduling():
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
                                    request_info, middle_vehicle_info)
     # print(time_2_go)
-    # print(request_info["requests"])
-    dvrppd_Solver.constructEngine(time2Go=time_2_go)  # 构造解
+    print(request_info["requests"])
+    dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 0.5)  # 构造解
     middle_tim = time.time()
-    left_time_2_heuristic = gConfig["algo_run_time"] - (middle_tim - start_time) / 60. - 0.5  # 留0.5秒输出数据
-    if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3:
-        dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
+    # if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3:
+    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool

@@ -16,8 +16,6 @@ from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborh
 from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class DVRPPD_Solver(object):
@@ -25,7 +23,7 @@ class DVRPPD_Solver(object):
         self._vehiclesPool = dict()
         self._requestsPool = requestPool()
         self._customersPool = dict()
-        self.weighted_objective = gConfig["weighted_objective_function"]
+        self.weighted_objective = configs.weighted_objective_function
         self.objective_score = np.infty
         self._travelCost_solver = costDatabase()
 
@@ -106,7 +104,9 @@ class DVRPPD_Solver(object):
             with open(configs.time_out_requests, "w") as f:
                 json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
 
-    def constructEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")):
+    def constructEngine(self,
+                        time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+                        CPU_limit = 10.):
         """
         所有requests都要得到分配，并且所有route要满足时间窗，载重等约束条件
         """
@@ -120,7 +120,7 @@ class DVRPPD_Solver(object):
                                                 self._requestsPool,
                                                 self._customersPool,
                                                 self._travelCost_solver)
-        if constructor.solve(time2Go=time2Go):
+        if constructor.solve(time2Go=time2Go, CPU_limit=CPU_limit):
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             for customerID in self._customersPool:
                 self._customersPool[customerID].gen_node_port_map()
@@ -146,15 +146,17 @@ class DVRPPD_Solver(object):
                         if "-" in requestID:
                             _index = requestID.index("-")
                             requestID_temp = requestID[:_index]
-                        time_out_requests[requestID_temp] = requests_info_temp[requestID]
+                        time_out_requests[requestID_temp] = requests_info_temp[requestID_temp]
                         self.addNewRequest2RequestsPool(requests_info_temp)
                 self._gen_time_out_requests_json(time_out_requests)
             time_now = time.time()
-            if time_now - start_time < 4 * 60:
-                self.heuristicEngine(CPU_limit=2, mission="repair")
+            if time_now - start_time < 7 * 60:
+                self.heuristicEngine(CPU_limit=1, mission="repair")
+            else:
+                self._gen_object_score()
             self._print_solution()
 
-    def heuristicEngine(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+    def heuristicEngine(self, time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                         CPU_limit=10,
                         mission="improvement"):
         heuristicSolver = AdaptiveLargeNeighborhoodSearch(self._vehiclesPool,

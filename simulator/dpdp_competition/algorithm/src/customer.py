@@ -4,8 +4,7 @@ from queue import PriorityQueue
 
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 class customer(object):
@@ -162,7 +161,7 @@ class customer(object):
                     break
             if node.demandType != "parking":
                 earliestDepartureTime = node.vehicleArriveTime + timedelta(
-                    seconds=gConfig["static_process_time_on_customer"])
+                    seconds=configs.static_process_time_on_customer)
             else:
                 earliestDepartureTime = node.vehicleArriveTime
             if batch_node:
@@ -177,6 +176,9 @@ class customer(object):
             else:
                 latest_leave_time = datetime.strptime(node.timeWindow[1], "%Y-%m-%d %H:%M:%S")
             order_creation_time = datetime.strptime(node.timeWindow[0], "%Y-%m-%d %H:%M:%S")
+            if batch_node:
+                for nd in batch_node:
+                    latest_leave_time = min(latest_leave_time, datetime.strptime(nd.timeWindow[1], "%Y-%m-%d %H:%M:%S"))
             if node.vehicleArriveTime < order_creation_time:
                 return None
             if earliestDepartureTime > latest_leave_time:
@@ -271,7 +273,7 @@ class customer(object):
 
         earliestDepartureTime = node.vehicleArriveTime + timedelta(seconds=node.processTime)
         if node.leftNode.demandType != "depot" and node.leftNode.customerID == node.customerID:
-            earliestDepartureTime += timedelta(seconds=gConfig["static_process_time_on_customer"])
+            earliestDepartureTime += timedelta(seconds=configs.static_process_time_on_customer)
 
         # TODO 此处需要在卡位分配模块写好后，删除下面这条代码
         # node.setVehicleDepartureTime(earliestDepartureTime)
