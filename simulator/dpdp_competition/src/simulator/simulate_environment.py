@@ -136,7 +136,8 @@ class SimulateEnvironment(object):
         self.total_score = Evaluator.calculate_total_score(self.history, self.route_map, len(self.id_to_vehicle))
 
         vehicle_order_list = self.history.get_vehicle_order_history()
-        with open("test.json", "w") as f:
+
+        with open(Configs.simulator_output_history, "w") as f:
             json.dump(vehicle_order_list, f, indent=4)
 
     # 数据更新

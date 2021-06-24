@@ -64,6 +64,7 @@ class Configs(object):
     algorithm_data_interaction_folder_path = os.path.join(algorithm_folder_path, "data_interaction")
     if not os.path.exists(algorithm_data_interaction_folder_path):
         os.makedirs(algorithm_data_interaction_folder_path)
+    simulator_output_history = os.path.join(algorithm_data_interaction_folder_path, "history_history.json")
     algorithm_vehicle_input_info_path = os.path.join(algorithm_data_interaction_folder_path, "vehicle_info.json")
     algorithm_unallocated_order_items_input_path = os.path.join(algorithm_data_interaction_folder_path,
                                                                 "unallocated_order_items.json")
