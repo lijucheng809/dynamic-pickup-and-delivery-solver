@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 import time
 import os
 
-from algorithm.src.customer import customer
-from algorithm.src.travelCost import costDatabase
-from algorithm.src.utlis import customer_request_combination, feasibleRearrangePortAssignmentSchedule
-from algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
-import algorithm.src.getConfig
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = algorithm.src.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class vehicle(object):

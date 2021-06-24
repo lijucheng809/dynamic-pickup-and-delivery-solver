@@ -7,15 +7,15 @@ from copy import deepcopy
 import sys
 from queue import PriorityQueue
 
-from algorithm.src.vehicle import vehicle
-from algorithm.src.travelCost import costDatabase
-from algorithm.src.utlis import customer_request_combination, sourcePool, checks
-from algorithm.src.requestPool import requestPool
-from algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, sourcePool, checks
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.customer import customer
 
-import algorithm.src.getConfig
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = algorithm.src.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class insertOperator(metaclass=ABCMeta):

@@ -1,5 +1,5 @@
 import configparser
-from algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 def get_config(config_file=configs.config_ini_path):

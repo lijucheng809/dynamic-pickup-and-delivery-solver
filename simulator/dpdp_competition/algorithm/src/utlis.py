@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 
 
 class customer_request_combination(object):

@@ -4,16 +4,16 @@ from datetime import datetime, timedelta
 import time
 import os
 
-from algorithm.src.customer import customer
-from algorithm.src.DVRPPDSolver import DVRPPD_Solver
-from algorithm.src.vehicle import vehicle
-from algorithm.data_transfomer import data_transfomer
-from algorithm.src.travelCost import costDatabase
-from algorithm.conf.configs import configs
-from algorithm.src.utlis import fileProcessor
-import algorithm.src.getConfig
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPD_Solver
+from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.src.utlis import fileProcessor
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = algorithm.src.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):

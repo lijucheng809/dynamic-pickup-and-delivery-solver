@@ -2,10 +2,10 @@ from typing import List, Dict
 from datetime import datetime, timedelta
 from queue import PriorityQueue
 
-from algorithm.src.travelCost import costDatabase
-from algorithm.src.utlis import customer_request_combination
-import algorithm.src.getConfig
-gConfig = algorithm.src.getConfig.get_config()
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination
+import simulator.dpdp_competition.algorithm.src.getConfig
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class customer(object):

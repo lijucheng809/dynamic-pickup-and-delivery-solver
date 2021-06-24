@@ -6,17 +6,17 @@ import math
 from datetime import datetime, timedelta
 import sys
 
-from algorithm.src.vehicle import vehicle
-from algorithm.src.customer import customer
-from algorithm.src.requestPool import requestPool
-from algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
+from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
     RegretInsertionOperator
-from algorithm.src.travelCost import costDatabase
-from algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
 
-import algorithm.src.getConfig
+import simulator.dpdp_competition.algorithm.src.getConfig
 
-gConfig = algorithm.src.getConfig.get_config()
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class AdaptiveLargeNeighborhoodSearch(object):

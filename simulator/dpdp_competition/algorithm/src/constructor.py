@@ -3,13 +3,13 @@ from copy import deepcopy
 from typing import Dict
 from datetime import datetime
 
-from algorithm.src.requestPool import requestPool
-from algorithm.src.customer import customer
-from algorithm.src.vehicle import vehicle
-from algorithm.src.Operator import GreedyInsertionOperator, RegretInsertionOperator
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.Operator import GreedyInsertionOperator, RegretInsertionOperator
 
-import algorithm.src.getConfig
-gConfig = algorithm.src.getConfig.get_config()
+import simulator.dpdp_competition.algorithm.src.getConfig
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class constructor(metaclass=ABCMeta):

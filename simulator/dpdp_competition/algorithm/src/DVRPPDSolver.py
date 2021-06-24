@@ -6,16 +6,16 @@ import numpy as np
 from datetime import datetime, timedelta
 import sys
 
-from algorithm.src.requestPool import requestPool
-from algorithm.src.constructor import solomonInsertionHeuristic
-from algorithm.src.travelCost import costDatabase
-from algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
-from algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
-from algorithm.src.utlis import checker, DateEncoder
-from algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
+from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
+from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
+from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
-import algorithm.src.getConfig
-gConfig = algorithm.src.getConfig.get_config()
+import simulator.dpdp_competition.algorithm.src.getConfig
+gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class DVRPPD_Solver(object):

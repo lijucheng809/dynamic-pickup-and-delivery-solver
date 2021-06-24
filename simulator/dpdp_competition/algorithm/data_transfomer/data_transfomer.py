@@ -1,7 +1,7 @@
 import json
 import time
 from datetime import datetime, timedelta
-from algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 from copy import deepcopy
 import os
 
