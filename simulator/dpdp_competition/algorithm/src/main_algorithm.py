@@ -229,7 +229,7 @@ def scheduling():
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
                                    request_info, middle_vehicle_info)
     # print(time_2_go)
-    print(request_info["requests"]["0058240190"])
+    # print(request_info["requests"]["0058240190"])
     dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 0.5)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
