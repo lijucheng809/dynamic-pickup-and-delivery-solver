@@ -80,7 +80,8 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
                              "creation_time": order_id_info_map[orderID]["creation_time"],
                              "finish_time": None}}
         if orderID in time_out_requests:
-            dvrppd_Solver.addNewRequest2RequestsPool({orderID: time_out_requests[orderID]})
+            request[orderID]["pickup_demand_info"]["time_window"][1] = time_out_requests[orderID]["pickup_demand_info"]["time_window"][1]
+            request[orderID]["delivery_demand_info"]["time_window"][1]= time_out_requests[orderID]["delivery_demand_info"]["time_window"][1]
         else:
             if "-" in orderID:
                 index_ = orderID.index("-")
@@ -90,7 +91,7 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
                         time_out_requests[orderID_new]["pickup_demand_info"]["time_window"][1]
                     request[orderID]["delivery_demand_info"]["time_window"][1] = \
                         time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
-            dvrppd_Solver.addNewRequest2RequestsPool(request)
+        dvrppd_Solver.addNewRequest2RequestsPool(request)
 
 
 def __gen_customer_object(dvrppd_Solver, customerID, customer_id_info_map):
@@ -228,7 +229,7 @@ def scheduling():
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
                                    request_info, middle_vehicle_info)
     # print(time_2_go)
-    # print(request_info["requests"])
+    print(request_info["requests"]["0058240190"])
     dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 0.5)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
