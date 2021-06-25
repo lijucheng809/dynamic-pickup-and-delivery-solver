@@ -7,9 +7,7 @@ from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
 from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
 from simulator.dpdp_competition.algorithm.src.Operator import GreedyInsertionOperator, RegretInsertionOperator
-
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 class constructor(metaclass=ABCMeta):
@@ -37,9 +35,11 @@ class solomonInsertionHeuristic(constructor):
                                                           self._customers,
                                                           travelCost_Solver)
 
-    def solve(self, time2Go=datetime.strptime(gConfig["date"] + " 0:0:0", "%Y-%m-%d %H:%M:%S")):
+    def solve(self,
+              time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+              CPU_limit=10.):
 
-        if self._insertionOperator.insert(time2Go=time2Go):
+        if self._insertionOperator.insert(time2Go=time2Go, CPU_limit=CPU_limit):
             return True
         else:
             return False

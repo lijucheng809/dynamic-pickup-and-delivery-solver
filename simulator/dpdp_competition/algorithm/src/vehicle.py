@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import List, Dict
 from datetime import datetime, timedelta
 import time
@@ -8,10 +9,6 @@ from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.conf.configs import configs
-
-import simulator.dpdp_competition.algorithm.src.getConfig
-
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
 
 
 class vehicle(object):
@@ -40,7 +37,7 @@ class vehicle(object):
         self._status = status
         self._position = position
         self._finishServedCustomerList = []
-        self._staticServeTimeOnCustomer = gConfig["static_process_time_on_customer"]
+        self._staticServeTimeOnCustomer = configs.static_process_time_on_customer
         self._currentTravelCost = 0
         self._update_time = None
         self._mileage = mileage
@@ -94,7 +91,7 @@ class vehicle(object):
                 travel_cost = travelCost_solver.getTravelCost(node1.customerID, node2.customerID)
                 total_distance += travel_cost["distance"]
                 total_travelTime += travel_cost["travel_time"]
-            weight = gConfig["weighted_objective_function"]
+            weight = configs.weighted_objective_function
             self._currentTravelCost = weight * total_distance + (1 - weight) * total_travelTime
         else:
             self._currentTravelCost = 0
@@ -274,6 +271,7 @@ class vehicle(object):
             left_node = self._route[len(self._route) - 1]
             travel_cost = travelCost_solver.getTravelCost(left_node.customerID, customerID)
             arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+            # print("vehicleID:", self._vehicleID, " requestID:", requestID, " arrive_time:",arrive_time)
             node.setVehicleArriveTime(arrive_time)
             left_node.setRightNode(node)
             node.setLeftNode(left_node)
@@ -281,8 +279,10 @@ class vehicle(object):
             self.updateVolume(volume)
             if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
                 customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
-            if not feasibleRearrangePortAssignmentSchedule(customers, customerID, node):
-                print("固定路线生成失败, requestID:", node.requestID)
+            flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node, tp="gen_fixed_route")
+            if not flag:
+                # assert flag
+                print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
 
     def activateVehicle(self, volume=0):
         self._status = 'idle'

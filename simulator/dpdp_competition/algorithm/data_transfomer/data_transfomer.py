@@ -5,6 +5,7 @@ from simulator.dpdp_competition.algorithm.conf.configs import configs
 from copy import deepcopy
 import os
 
+
 def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num=5):
     q_standard_split_num = len(request_item_map["q_standard"]) // spilt_num
     q_small_split_num = len(request_item_map["q_small"]) // spilt_num
@@ -53,7 +54,7 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
             q_standard_items_id = [] if not request_item_map["q_standard"] else request_item_map["q_standard"][
                                                                                 (spilt_num - 1) * q_standard_split_num:]
             q_small_items_id = [] if not request_item_map["q_small"] else request_item_map["q_small"][
-                                                                          (spilt_num - 1) ** q_small_split_num:]
+                                                                          (spilt_num - 1) * q_small_split_num:]
             q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
                                                                       (spilt_num - 1) * q_box_split_num:]
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
@@ -238,8 +239,8 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
             break
     vehicle_start_end_pair = {}
     if flag:
-        if os.path.exists(configs.time_out_requests_path):
-            os.remove(configs.time_out_requests_path)
+        if os.path.exists(configs.time_out_requests):
+            os.remove(configs.time_out_requests)
         for vehicle_info in vehicles_info:
             start_pos = vehicle_info["cur_factory_id"]
             if destination[vehicle_info["id"]]:

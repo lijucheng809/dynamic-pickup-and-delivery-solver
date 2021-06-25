@@ -4,8 +4,7 @@ from queue import PriorityQueue
 
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination
-import simulator.dpdp_competition.algorithm.src.getConfig
-gConfig = simulator.dpdp_competition.algorithm.src.getConfig.get_config()
+from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 class customer(object):
@@ -116,7 +115,7 @@ class customer(object):
 
         return right_node
 
-    def rearrangeReservedPort(self, tp, travelCost_solver=costDatabase()):
+    def rearrangeReservedPort(self, tp="normal", travelCost_solver=costDatabase()):
         """
         当有新的装卸需求插入时，可能会打乱当前卡位的分配方案，需要对车辆进行重新分配卡位，按照先到先服务原则
         :return:
@@ -159,8 +158,11 @@ class customer(object):
                 if node in batchNode[key]:
                     batch_node = batchNode[key]
                     break
-            earliestDepartureTime = node.vehicleArriveTime + timedelta(
-                seconds=gConfig["static_process_time_on_customer"])
+            if node.demandType != "parking":
+                earliestDepartureTime = node.vehicleArriveTime + timedelta(
+                    seconds=configs.static_process_time_on_customer)
+            else:
+                earliestDepartureTime = node.vehicleArriveTime
             if batch_node:
                 for nd in batch_node:
                     earliestDepartureTime += timedelta(seconds=nd.processTime)
@@ -173,12 +175,22 @@ class customer(object):
             else:
                 latest_leave_time = datetime.strptime(node.timeWindow[1], "%Y-%m-%d %H:%M:%S")
             order_creation_time = datetime.strptime(node.timeWindow[0], "%Y-%m-%d %H:%M:%S")
+            if batch_node:
+                for nd in batch_node:
+                    latest_leave_time = min(latest_leave_time, datetime.strptime(nd.timeWindow[1], "%Y-%m-%d %H:%M:%S"))
             if node.vehicleArriveTime < order_creation_time:
                 return None
             if earliestDepartureTime > latest_leave_time:
-                # if tp == "destroy":
-                #     assert earliestDepartureTime < latest_leave_time
-                return None
+                if tp == "gen_fixed_route":
+                    delta = (earliestDepartureTime - latest_leave_time).seconds
+                    latest_leave_time += timedelta(seconds=delta*2)
+                    if batch_node:
+                        for nd in batch_node:
+                            nd.timeWindow[1] = str(latest_leave_time)
+                    else:
+                        node.timeWindow[1] = str(latest_leave_time)
+                else:
+                    return None
 
             for i in range(self._port_num):
                 if len(self._port_reserveTable[i]) == 0:
@@ -215,15 +227,24 @@ class customer(object):
             if not flag_no_wait:
                 indexes = q_dispatchedNode.get()
                 pre_node = self._port_reserveTable[indexes[1]][-1]
-                if pre_node.vehicleDepartureTime > node.vehicleArriveTime:
+                start_process_time = node.vehicleArriveTime
+                if pre_node.vehicleDepartureTime > node.vehicleArriveTime and node.demandType != "parking":
                     # print("开始产生等待的时间")
                     node_departure_time = pre_node.vehicleDepartureTime + \
                                           timedelta(seconds=(earliestDepartureTime - node.vehicleArriveTime).seconds)
+                    start_process_time = pre_node.vehicleDepartureTime
                 else:
                     node_departure_time = earliestDepartureTime
-                    if tp == "destroy":
-                        assert node_departure_time < latest_leave_time
-                if node_departure_time < latest_leave_time:
+                if node_departure_time > latest_leave_time or earliestDepartureTime > latest_leave_time \
+                        and tp == "gen_fixed_route":
+                    delta = (earliestDepartureTime - latest_leave_time).seconds
+                    latest_leave_time += timedelta(seconds=delta * 2)
+                    if batch_node:
+                        for nd in batch_node:
+                            nd.timeWindow[1] = str(latest_leave_time)
+                    else:
+                        node.timeWindow[1] = str(latest_leave_time)
+                if node_departure_time <= latest_leave_time:
                     right_node = self._getRightNode(node, batch_node)
                     if right_node:
                         arrive_time = node_departure_time + \
@@ -240,15 +261,15 @@ class customer(object):
                             right_node_temp.setVehicleArriveTime(arrive_time)
                     if batch_node:
                         for nd in batch_node:
-                            nd.setStartProcessTime(pre_node.vehicleDepartureTime)
+                            nd.setStartProcessTime(start_process_time)
                             nd.setVehicleDepartureTime(node_departure_time)
                     else:
-                        node.setStartProcessTime(pre_node.vehicleDepartureTime)
+                        node.setStartProcessTime(start_process_time)
                         node.setVehicleDepartureTime(node_departure_time)
                     self._port_reserveTable[indexes[1]].append(node)
                     q_dispatchedNode.put((node.vehicleDepartureTime, indexes[1]))
                 else:
-                    # print("等待时间过长-------------------------------")
+                    print(node_departure_time, latest_leave_time)
                     return None
 
         self.gen_node_port_map()
@@ -267,7 +288,7 @@ class customer(object):
 
         earliestDepartureTime = node.vehicleArriveTime + timedelta(seconds=node.processTime)
         if node.leftNode.demandType != "depot" and node.leftNode.customerID == node.customerID:
-            earliestDepartureTime += timedelta(seconds=gConfig["static_process_time_on_customer"])
+            earliestDepartureTime += timedelta(seconds=configs.static_process_time_on_customer)
 
         # TODO 此处需要在卡位分配模块写好后，删除下面这条代码
         # node.setVehicleDepartureTime(earliestDepartureTime)

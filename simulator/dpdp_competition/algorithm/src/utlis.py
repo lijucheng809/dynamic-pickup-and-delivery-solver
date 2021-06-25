@@ -198,7 +198,7 @@ def feasibleRearrangePortAssignmentSchedule(customers: dict,
             return True
         else:
             for nd in rearrange_node_list:
-                return feasibleRearrangePortAssignmentSchedule(customers, nd.customerID, nd)
+                return feasibleRearrangePortAssignmentSchedule(customers, nd.customerID, nd, tp)
 
 
 def checker(vehicles):
@@ -219,7 +219,8 @@ def checker(vehicles):
                     #     print(right_node_arrive_time, node.rightNode.vehicleArriveTime)
                     #     flag = False
     if not flag:
-        print("brother node 异常")
+        # print("brother node 异常")
+        pass
     return flag
 
 
