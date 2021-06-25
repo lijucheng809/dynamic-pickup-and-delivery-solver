@@ -7,7 +7,8 @@ import os
 
 from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
+    feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
@@ -237,8 +238,8 @@ class vehicle(object):
                       requests_items_map,
                       travelCost_solver=costDatabase()):
         time_out_requests = {}
-        if os.path.exists(configs.time_out_requests_path):
-            with open(configs.time_out_requests_path, "r") as f:
+        if os.path.exists(configs.time_out_requests):
+            with open(configs.time_out_requests, "r") as f:
                 time_out_requests = json.load(f)
         while request_id_on_order:
             requestID = request_id_on_order.pop()

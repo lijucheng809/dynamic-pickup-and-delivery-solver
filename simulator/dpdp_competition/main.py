@@ -32,7 +32,7 @@ from src.utils.logging_engine import logger
 if __name__ == "__main__":
     # if you want to traverse all instances, set the selected_instances to []
     selected_instances = Configs.selected_instances
-
+    # selected_instances = []
     if selected_instances:
         test_instances = selected_instances
     else:
