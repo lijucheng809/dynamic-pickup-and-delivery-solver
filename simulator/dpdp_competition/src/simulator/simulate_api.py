@@ -70,7 +70,7 @@ def __initialize(factory_info_file_name: str, route_info_file_name: str, instanc
         __initial_position_of_vehicles(id_to_factory, id_to_vehicle, initial_time)
 
         # return the instance of the object SimulateEnvironment
-        return SimulateEnvironment(initial_time, time_interval, id_to_order, id_to_vehicle, id_to_factory, route_map)
+        return SimulateEnvironment(initial_time, time_interval, id_to_order, id_to_vehicle, id_to_factory, route_map, instance_folder)
     except Exception as exception:
         logger.error("Failed to read initial data")
         logger.error(f"Error: {exception}, {traceback.format_exc()}")

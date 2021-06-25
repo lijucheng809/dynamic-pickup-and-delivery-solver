@@ -1,4 +1,4 @@
-car_num,capacity,operation,gps_id
+car_num,capacity,operation_time,gps_id
 V_1,5.0,24.0,G1
 V_2,5.0,24.0,G2
 V_3,5.0,24.0,G3

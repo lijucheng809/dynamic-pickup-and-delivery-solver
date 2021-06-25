@@ -41,7 +41,7 @@ from src.utils.tools import get_item_list_of_vehicles
 
 class SimulateEnvironment(object):
     def __init__(self, initial_time: int, time_interval: int, id_to_order: dict, id_to_vehicle: dict,
-                 id_to_factory: dict, route_map):
+                 id_to_factory: dict, route_map, instance_folder):
         """
         :param initial_time: unix timestamp, unit is second
         :param time_interval: unit is second
@@ -81,6 +81,8 @@ class SimulateEnvironment(object):
 
         # 算法调用命令
         self.algorithm_calling_command = ''
+
+        self._instance_name = instance_folder
 
     # 初始化历史记录
     def __ini_history(self):
@@ -136,8 +138,8 @@ class SimulateEnvironment(object):
         self.total_score = Evaluator.calculate_total_score(self.history, self.route_map, len(self.id_to_vehicle))
 
         vehicle_order_list = self.history.get_vehicle_order_history()
-
-        with open(Configs.simulator_output_history, "w") as f:
+        output_file_path = os.path.join(Configs.algorithm_data_interaction_folder_path, self._instance_name+".json")
+        with open(output_file_path, "w") as f:
             json.dump(vehicle_order_list, f, indent=4)
 
     # 数据更新
