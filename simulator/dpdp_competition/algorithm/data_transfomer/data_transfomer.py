@@ -160,7 +160,7 @@ def __reset_destination(vehicles_info_map, vehicleID, customers, destination, de
     destination[vehicleID]["pickup_item_list"] = []
 
 
-def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info_map, ongoing_items_map):
+def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info_map, old_requests_map):
     vehicle_route = {}
     destination = {}
     vehicleIDs = []
@@ -185,7 +185,6 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                     rk += 1
                 factory_id = route[left].customerID
                 lng, lat = customers[factory_id].getPosition[0], customers[factory_id].getPosition[1]
-                # TODO 时间戳格式记得要转换
                 arrive_time = route[left].vehicleArriveTime
                 leave_time = route[left].vehicleDepartureTime
                 arrive_time, leave_time = __gen_time_stamp(arrive_time, leave_time, update_time)
@@ -194,16 +193,27 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                 for i in range(left, rk + 1):
                     node = route[i]
                     requestID = node.requestID
-                    items = requests_items_map[requestID]
-                    if node.demandType == "pickup":
-                        pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
-                    else:
-                        # TODO 需要加一个if判断delivery_only的出现的情况
-                        if "delivery_only" in items:
-                            delivery_item_list += items["delivery_only"][::-1]
+                    if requestID not in old_requests_map:
+                        items = requests_items_map[requestID]
+                        if node.demandType == "pickup":
+                            pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
                         else:
-                            total_items = items["q_standard"] + items["q_small"] + items["q_box"]
-                            delivery_item_list += total_items[::-1]
+                            if "delivery_only" in items:
+                                delivery_item_list += items["delivery_only"][::-1]
+                            else:
+                                total_items = items["q_standard"] + items["q_small"] + items["q_box"]
+                                delivery_item_list += total_items[::-1]
+                    else:
+                        if node.demandType == "pickup":
+                            for old_request_id in old_requests_map[requestID]:
+                                items = requests_items_map[old_request_id]
+                                pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
+                        else:
+                            for old_request_id in old_requests_map[requestID][::-1]:
+                                items = requests_items_map[old_request_id]
+                                total_items = items["q_standard"] + items["q_small"] + items["q_box"]
+                                delivery_item_list += total_items[::-1]
+                            # delivery_item_list = delivery_item_list[::-1]
                 customer_info = {"factory_id": factory_id,
                                  "lng": lng,
                                  "lat": lat,

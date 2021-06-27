@@ -2,11 +2,10 @@ import json
 import os
 # import folium
 import time
-
 import numpy as np
-# import webbrowser as wb
 from datetime import datetime, timedelta
 import sys
+from queue import PriorityQueue
 
 from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
 from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
@@ -17,15 +16,18 @@ from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-
 class DVRPPD_Solver(object):
-    def __init__(self):
+    def __init__(self, old_request_map: dict):
         self._vehiclesPool = dict()
         self._requestsPool = requestPool()
         self._customersPool = dict()
         self.weighted_objective = configs.weighted_objective_function
         self.objective_score = np.infty
         self._travelCost_solver = costDatabase()
+        self._fail_insertion_list = {}
+        self._time2Go = None
+        self._time_over_requests = {}
+        self._old_request_map = old_request_map
 
     @property
     def getCustomerPool(self):
@@ -33,11 +35,27 @@ class DVRPPD_Solver(object):
 
     @property
     def getVehiclesPool(self):
+        if self._time_over_requests:
+            minpq_vehicle_route = self._get_minpq_vehicle_route()
+            for requestID in self._time_over_requests:
+                if minpq_vehicle_route.empty():
+                    minpq_vehicle_route = self._get_minpq_vehicle_route()
+                vehicleID = minpq_vehicle_route.get()[1]
+                self._vehiclesPool[vehicleID].force_insertion(self._time_over_requests[requestID])
+                route = self._vehiclesPool[vehicleID].getCurrentRoute
+                length = len(route)
+                print(route[length-1].requestID)
         return self._vehiclesPool
 
     @property
     def getRequestsPool(self):
         return self._requestsPool
+
+    def _get_minpq_vehicle_route(self):
+        minpq_vehicle_route = PriorityQueue()
+        for vehicleID in self._vehiclesPool:
+            minpq_vehicle_route.put((len(self._vehiclesPool[vehicleID].getCurrentRoute), vehicleID))
+        return minpq_vehicle_route
 
     def getCustomerObject(self, customerID):
         return self._customersPool[customerID]
@@ -90,27 +108,79 @@ class DVRPPD_Solver(object):
         """
         pass
 
-    @staticmethod
-    def _gen_time_out_requests_json(time_out_requests):
+    def _gen_time_out_requests_json(self, time_out_requests):
         if os.path.exists(configs.time_out_requests):
             with open(configs.time_out_requests, "r") as f:
                 time_out_requests_old = json.load(f)
             for requestID in time_out_requests:
-                if requestID not in time_out_requests_old:
+                if requestID in self._old_request_map:
+                    for old_request_id in self._old_request_map[requestID]:
+                        time_out_requests_old[old_request_id] = time_out_requests[requestID]
+                        time_out_requests_old[old_request_id]["requestID"] = old_request_id
+                else:
                     time_out_requests_old[requestID] = time_out_requests[requestID]
             with open(configs.time_out_requests, "w") as f:
                 json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
         else:
+            time_out_requests_old = {}
+            for requestID in time_out_requests:
+                if requestID in self._old_request_map:
+                    for old_request_id in self._old_request_map[requestID]:
+                        time_out_requests_old[old_request_id] = time_out_requests[requestID]
+                        time_out_requests_old[old_request_id]["requestID"] = old_request_id
+                else:
+                    time_out_requests_old[requestID] = time_out_requests[requestID]
             with open(configs.time_out_requests, "w") as f:
-                json.dump(time_out_requests, f, cls=DateEncoder, indent=4)
+                json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
+
+    def _insertion_idle_vehicle(self):
+        minpq_vehicle_route = self._get_minpq_vehicle_route()
+        null_vehicles = set()
+        while not minpq_vehicle_route.empty():
+            (length, vehicleID) = minpq_vehicle_route.get()
+            if length == 1:
+                null_vehicles.add(vehicleID)
+            else:
+                break
+        for requests_info in self._fail_insertion_list:
+            for requestID in requests_info:
+                tw_left = datetime.strptime(requests_info[requestID]["pickup_demand_info"]["time_window"][0],
+                                             "%Y-%m-%d %H:%M:%S")
+                tw_right = tw_left + timedelta(hours=4)
+                if tw_right + timedelta(minutes=30) < self._time2Go:
+                    self._time_over_requests[requestID] = requests_info[requestID]
+                if null_vehicles:
+                    earliest_finish_time = datetime.strptime(
+                        requests_info[requestID]["pickup_demand_info"]["time_window"][1],
+                        "%Y-%m-%d %H:%M:%S") + timedelta(hours=100)
+                    best_insertion_vehicle = None
+                    for vehicleID in null_vehicles:
+                        route = self._vehiclesPool[vehicleID].getCurrentRoute
+                        vehicle_leave_time = route[0].vehicleDepartureTime
+                        travel_cost1 = self._travelCost_solver.getTravelCost(route[0].customerID,
+                                                                             requests_info[requestID][
+                                                                                 "pickup_demand_info"]["customer_id"])
+                        travel_cost2 = self._travelCost_solver.getTravelCost(
+                            requests_info[requestID]["pickup_demand_info"]["customer_id"],
+                            requests_info[requestID]["delivery_demand_info"]["customer_id"])
+                        request_finish_time = vehicle_leave_time + timedelta(seconds=travel_cost1["travel_time"] +
+                                                                                     travel_cost2["travel_time"])
+                        if request_finish_time < earliest_finish_time:
+                            earliest_finish_time = request_finish_time
+                            best_insertion_vehicle = vehicleID
+                    if requestID in self._time_over_requests:
+                        self._time_over_requests.pop(requestID)
+                    self._vehiclesPool[best_insertion_vehicle].force_insertion(requests_info[requestID])
+                    null_vehicles.remove(best_insertion_vehicle)
 
     def constructEngine(self,
                         time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
-                        CPU_limit = 10.):
+                        CPU_limit=10.):
         """
         所有requests都要得到分配，并且所有route要满足时间窗，载重等约束条件
         """
         # TODO 需要完善如果插入失败后的预备方案
+        self._time2Go = time2Go
         start_time = time.time()
         for vehicleID in self._vehiclesPool:
             if not self._scheduleNormal(vehicleID) or not self._currentRouteFeasible(vehicleID):
@@ -129,6 +199,7 @@ class DVRPPD_Solver(object):
         else:
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             fail_insertion_requests = constructor.get_fail_insertion_requests
+            self._fail_insertion_list = fail_insertion_requests
             time_out_requests = {}
             if fail_insertion_requests:
                 for requests_info in fail_insertion_requests:
@@ -137,9 +208,9 @@ class DVRPPD_Solver(object):
                         tw_right = datetime.strptime(requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1],
                                                      "%Y-%m-%d %H:%M:%S")
                         if len(self._vehiclesPool) == 100:
-                            tw_right += timedelta(hours=8)
+                            tw_right += timedelta(hours=2)
                         else:
-                            tw_right += timedelta(hours=4)
+                            tw_right += timedelta(hours=1)
                         requests_info_temp[requestID]["pickup_demand_info"]["time_window"][1] = str(tw_right)
                         requests_info_temp[requestID]["delivery_demand_info"]["time_window"][1] = str(tw_right)
                         requestID_temp = requestID
@@ -154,6 +225,7 @@ class DVRPPD_Solver(object):
                 self.heuristicEngine(CPU_limit=1, mission="repair")
             else:
                 self._gen_object_score()
+                self._insertion_idle_vehicle()
             self._print_solution()
 
     def heuristicEngine(self, time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
@@ -172,6 +244,9 @@ class DVRPPD_Solver(object):
             self._vehiclesPool = solution["source_pool"].vehicles
             self._requestsPool = solution["source_pool"].requests
             self._customersPool = solution["source_pool"].customers
+            self._fail_insertion_list = {}
+        else:
+            self._insertion_idle_vehicle()
         self._gen_object_score()
 
     def _print_solution(self):

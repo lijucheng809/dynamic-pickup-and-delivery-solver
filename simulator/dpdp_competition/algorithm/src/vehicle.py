@@ -285,6 +285,49 @@ class vehicle(object):
                 # assert flag
                 print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
 
+    def force_insertion(self, request, travelCost_solver=costDatabase()):
+        pickup_customer_id = request["pickup_demand_info"]["customer_id"]
+        delivery_customer_id = request["delivery_demand_info"]["customer_id"]
+        requestID = request["requestID"]
+        process_time = request["pickup_demand_info"]["process_time"]
+        volume = request["pickup_demand_info"]["volume"]
+        time_window_left = request["pickup_demand_info"]["time_window"][0]
+        time_window_right = request["pickup_demand_info"]["time_window"][1]
+        pickup_node = customer_request_combination(pickup_customer_id,
+                                                   requestID,
+                                                   "pickup",
+                                                   None,
+                                                   volume,
+                                                   [time_window_left, time_window_right],
+                                                   process_time,
+                                                   self._vehicleID)
+        left_node = self._route[len(self._route) - 1]
+        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, pickup_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        pickup_node.setVehicleArriveTime(arrive_time)
+        departure_time = arrive_time + timedelta(seconds=1800+process_time)
+        pickup_node.setVehicleDepartureTime(departure_time)
+        left_node.setRightNode(pickup_node)
+        pickup_node.setLeftNode(left_node)
+        self._route.append(pickup_node)
+        delivery_node = customer_request_combination(delivery_customer_id,
+                                                     requestID,
+                                                     "delivery",
+                                                     None,
+                                                     -volume,
+                                                     [time_window_left, time_window_right],
+                                                     process_time,
+                                                     self._vehicleID)
+        left_node = self._route[len(self._route) - 1]
+        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, delivery_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        delivery_node.setVehicleArriveTime(arrive_time)
+        departure_time = arrive_time + timedelta(seconds=1800 + process_time)
+        delivery_node.setVehicleDepartureTime(departure_time)
+        left_node.setRightNode(delivery_node)
+        delivery_node.setLeftNode(left_node)
+        self._route.append(delivery_node)
+
     def activateVehicle(self, volume=0):
         self._status = 'idle'
         depot_node = customer_request_combination(self._depotID,

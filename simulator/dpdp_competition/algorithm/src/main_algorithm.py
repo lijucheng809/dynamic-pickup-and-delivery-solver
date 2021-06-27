@@ -12,6 +12,7 @@ from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
     feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.src.request_cluster import cluster
 
 
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
@@ -206,7 +207,6 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 
 def scheduling():
     start_time = time.time()
-    dvrppd_Solver = DVRPPD_Solver()
     middle_vehicle_info = None
     with open(configs.customer_info_path, "r") as f:
         customer_id_info_map = json.load(f)
@@ -217,24 +217,48 @@ def scheduling():
     if os.path.exists(configs.middle_vehicle_info_path):
         with open(configs.middle_vehicle_info_path, "r") as f:
             middle_vehicle_info = json.load(f)
-
+    time_out_requests = {}
+    if os.path.exists(configs.time_out_requests):
+        with open(configs.time_out_requests, "r") as f:
+            time_out_requests = json.load(f)
     ongoing_items_map = {}
     for item in ongoing_items:
         ongoing_items_map[item["id"]] = item
     vehicles_info_map = {}
     for vehicle_info in vehicles_info:
         vehicles_info_map[vehicle_info["id"]] = vehicle_info
+
     request_info = data_transfomer.__requests_sim_2_algo()
-    pushRequests2Solver(dvrppd_Solver, request_info["requests"], customer_id_info_map)
+    for requestID in request_info["requests"]:
+        if requestID in time_out_requests:
+            request_info["requests"][requestID]["pickup_timeWindow"][1] = \
+                time_out_requests[requestID]["pickup_demand_info"]["time_window"][1]
+            request_info["requests"][requestID]["delivery_timeWindow"][1] = \
+                time_out_requests[requestID]["delivery_demand_info"]["time_window"][1]
+        else:
+            if "-" in requestID:
+                index_ = requestID.index("-")
+                orderID_new = requestID[:index_]
+                if orderID_new in time_out_requests:
+                    request_info["requests"][requestID]["pickup_timeWindow"][1] = \
+                        time_out_requests[orderID_new]["pickup_demand_info"]["time_window"][1]
+                    request_info["requests"][requestID]["delivery_timeWindow"][1] = \
+                        time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
+    new_requests, old_requests_map = cluster(request_info["requests"])
+    dvrppd_Solver = DVRPPD_Solver(old_requests_map)
+    pushRequests2Solver(dvrppd_Solver, new_requests, customer_id_info_map)
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
                                    request_info, middle_vehicle_info)
-    # print(time_2_go)
-    # print(request_info["requests"]["0058240190"])
-    dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 0.5)  # 构造解
+    flag = True
+    for vehicle_info in vehicles_info:
+        if vehicle_info["destination"]:
+            flag = False
+            break
+    dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 1)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
-    if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3:
-        dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    # if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3 and flag:
+    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
@@ -242,7 +266,7 @@ def scheduling():
                                           customers,
                                           request_info["requests_items_map"],
                                           vehicles_info_map,
-                                          ongoing_items)
+                                          old_requests_map)
 
 
 if __name__ == "__main__":

@@ -290,9 +290,11 @@ class GreedyInsertionOperator(insertOperator):
         route_length = len(self._source_pool.vehicles[vehicleID].getCurrentRoute)
         request_volume = request["pickup_demand_info"]["volume"]
         vehicle_capacity = self._source_pool.vehicles[vehicleID].getCapacity
-        for i in range(route_index, route_length):
-            if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(i+1) > vehicle_capacity:
-                return False
+        # for i in range(route_index, route_length):
+        #     if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(i+1) > vehicle_capacity:
+        #         return False
+        if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(route_index+1) > vehicle_capacity:
+            return False
         return True
 
     def _insertion_constrain(self,
