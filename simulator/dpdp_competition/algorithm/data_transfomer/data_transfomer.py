@@ -34,14 +34,18 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
         kid_requests[kid_requestID]["pallets"]["q_box"] = kid_q_box_num_list[i]
         process_time = 0
         if i < spilt_num - 1:
-            q_standard_items_id = [] if not request_item_map["q_standard"] else request_item_map["q_standard"][
-                                                                                i * q_standard_split_num:(
-                                                                                                                 i + 1) * q_standard_split_num]
-            q_small_items_id = [] if not request_item_map["q_small"] else request_item_map["q_small"][
-                                                                          i * q_small_split_num:(
-                                                                                                        i + 1) * q_small_split_num]
-            q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
-                                                                      i * q_box_split_num:(i + 1) * q_box_split_num]
+            if request_item_map["q_standard"] and q_standard_split_num != 0:
+                q_standard_items_id = request_item_map["q_standard"][i*q_standard_split_num:(i+1)*q_standard_split_num]
+            else:
+                q_standard_items_id = []
+            if request_item_map["q_small"] and q_small_split_num != 0:
+                q_small_items_id = request_item_map["q_small"][i*q_small_split_num:(i+1)*q_small_split_num]
+            else:
+                q_small_items_id = []
+            if request_item_map["q_box"] and q_box_split_num != 0:
+                q_box_items_id = request_item_map["q_box"][i*q_box_split_num:(i+1)*q_box_split_num]
+            else:
+                q_box_items_id = []
             if i == 0:
                 if q_standard_split_num == 0 and request_item_map["q_standard"]:
                     q_standard_items_id = request_item_map["q_standard"]
@@ -57,12 +61,18 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
                                                    "q_box": q_box_items_id}
 
         else:
-            q_standard_items_id = [] if not request_item_map["q_standard"] else request_item_map["q_standard"][
-                                                                                (spilt_num - 1) * q_standard_split_num:]
-            q_small_items_id = [] if not request_item_map["q_small"] else request_item_map["q_small"][
-                                                                          (spilt_num - 1) * q_small_split_num:]
-            q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
-                                                                      (spilt_num - 1) * q_box_split_num:]
+            if request_item_map["q_standard"] and q_standard_split_num != 0:
+                q_standard_items_id = request_item_map["q_standard"][(spilt_num-1)*q_standard_split_num:]
+            else:
+                q_standard_items_id = []
+            if request_item_map["q_small"] and q_small_split_num != 0:
+                q_small_items_id = request_item_map["q_small"][(spilt_num-1)*q_small_split_num:]
+            else:
+                q_small_items_id = []
+            if request_item_map["q_box"] and q_box_split_num != 0:
+                q_box_items_id = request_item_map["q_box"][(spilt_num-1)*q_box_split_num]
+            else:
+                q_box_items_id = []
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
                                                    "q_small": q_small_items_id,
                                                    "q_box": q_box_items_id}
