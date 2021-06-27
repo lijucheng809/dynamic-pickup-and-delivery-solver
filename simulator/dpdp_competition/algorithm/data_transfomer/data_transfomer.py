@@ -20,9 +20,12 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
             kid_q_small_num_list[i] = q_small_split_num * 0.5
             kid_q_box_num_list[i] = q_box_split_num * 0.25
         else:
-            kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
-            kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
-            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - (spilt_num-1) * q_box_split_num
+            if q_standard_split_num != 0:
+                kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
+            if q_small_split_num != 0:
+                kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
+            if q_box_split_num != 0:
+                kid_q_box_num_list[i] = len(request_item_map["q_box"]) - (spilt_num-1) * q_box_split_num
     for i in range(spilt_num):
         kid_requestID = requestID + "-{}".format(i + 1)
         kid_requests[kid_requestID] = deepcopy(request)
