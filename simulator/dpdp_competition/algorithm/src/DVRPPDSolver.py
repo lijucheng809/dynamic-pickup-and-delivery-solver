@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import sys
 from queue import PriorityQueue
+from copy import deepcopy
 
 from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
 from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
@@ -207,7 +208,7 @@ class DVRPPD_Solver(object):
         else:
             self._vehiclesPool, self._customersPool, self._requestsPool = constructor.outputSolution
             fail_insertion_requests = constructor.get_fail_insertion_requests
-            self._fail_insertion_list = fail_insertion_requests
+            self._fail_insertion_list = deepcopy(fail_insertion_requests)
             time_out_requests = {}
             if fail_insertion_requests:
                 for requests_info in fail_insertion_requests:
