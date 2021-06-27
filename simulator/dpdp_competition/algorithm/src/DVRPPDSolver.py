@@ -115,8 +115,12 @@ class DVRPPD_Solver(object):
             for requestID in time_out_requests:
                 if requestID in self._old_request_map:
                     for old_request_id in self._old_request_map[requestID]:
-                        time_out_requests_old[old_request_id] = time_out_requests[requestID]
-                        time_out_requests_old[old_request_id]["requestID"] = old_request_id
+                        request_id_temp = old_request_id
+                        if "-" in old_request_id:
+                            index_ = old_request_id.index("-")
+                            request_id_temp = old_request_id[:index_]
+                        time_out_requests_old[request_id_temp] = time_out_requests[requestID]
+                        time_out_requests_old[request_id_temp]["requestID"] = request_id_temp
                 else:
                     time_out_requests_old[requestID] = time_out_requests[requestID]
             with open(configs.time_out_requests, "w") as f:
@@ -126,8 +130,12 @@ class DVRPPD_Solver(object):
             for requestID in time_out_requests:
                 if requestID in self._old_request_map:
                     for old_request_id in self._old_request_map[requestID]:
-                        time_out_requests_old[old_request_id] = time_out_requests[requestID]
-                        time_out_requests_old[old_request_id]["requestID"] = old_request_id
+                        request_id_temp = old_request_id
+                        if "-" in old_request_id:
+                            index_ = old_request_id.index("-")
+                            request_id_temp = old_request_id[:index_]
+                        time_out_requests_old[request_id_temp] = time_out_requests[requestID]
+                        time_out_requests_old[request_id_temp]["requestID"] = request_id_temp
                 else:
                     time_out_requests_old[requestID] = time_out_requests[requestID]
             with open(configs.time_out_requests, "w") as f:

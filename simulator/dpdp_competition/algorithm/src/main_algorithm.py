@@ -18,9 +18,9 @@ from simulator.dpdp_competition.algorithm.src.request_cluster import cluster
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
     # tips = 1  # 取前六个需求做测试
     time_out_requests = {}
-    if os.path.exists(configs.time_out_requests):
-        with open(configs.time_out_requests, "r") as f:
-            time_out_requests = json.load(f)
+    # if os.path.exists(configs.time_out_requests):
+    #     with open(configs.time_out_requests, "r") as f:
+    #         time_out_requests = json.load(f)
     for orderID in order_id_info_map:
         # if tips == 5:
         #     break
@@ -80,18 +80,18 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
                              "delivery_demand_info": deliveryDemandInfo,
                              "creation_time": order_id_info_map[orderID]["creation_time"],
                              "finish_time": None}}
-        if orderID in time_out_requests:
-            request[orderID]["pickup_demand_info"]["time_window"][1] = time_out_requests[orderID]["pickup_demand_info"]["time_window"][1]
-            request[orderID]["delivery_demand_info"]["time_window"][1]= time_out_requests[orderID]["delivery_demand_info"]["time_window"][1]
-        else:
-            if "-" in orderID:
-                index_ = orderID.index("-")
-                orderID_new = orderID[:index_]
-                if orderID_new in time_out_requests:
-                    request[orderID]["pickup_demand_info"]["time_window"][1] = \
-                        time_out_requests[orderID_new]["pickup_demand_info"]["time_window"][1]
-                    request[orderID]["delivery_demand_info"]["time_window"][1] = \
-                        time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
+        # if orderID in time_out_requests:
+        #     request[orderID]["pickup_demand_info"]["time_window"][1] = time_out_requests[orderID]["pickup_demand_info"]["time_window"][1]
+        #     request[orderID]["delivery_demand_info"]["time_window"][1]= time_out_requests[orderID]["delivery_demand_info"]["time_window"][1]
+        # else:
+        #     if "-" in orderID:
+        #         index_ = orderID.index("-")
+        #         orderID_new = orderID[:index_]
+        #         if orderID_new in time_out_requests:
+        #             request[orderID]["pickup_demand_info"]["time_window"][1] = \
+        #                 time_out_requests[orderID_new]["pickup_demand_info"]["time_window"][1]
+        #             request[orderID]["delivery_demand_info"]["time_window"][1] = \
+        #                 time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
         dvrppd_Solver.addNewRequest2RequestsPool(request)
 
 

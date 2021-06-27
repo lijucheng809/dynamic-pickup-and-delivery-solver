@@ -12,13 +12,13 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
     q_box_split_num = len(request_item_map["q_box"]) // spilt_num
     kid_requests = {}
     kid_request_item_map = {}
-    kid_q_standard_num_list, kid_q_small_num_list, kid_q_box_num_list = [0] * spilt_num, [0] * spilt_num, [
-        0] * spilt_num
+    kid_q_standard_num_list, kid_q_small_num_list, kid_q_box_num_list = [0.] * spilt_num, [0.] * spilt_num, [
+        0.] * spilt_num
     for i in range(spilt_num):
         if i < spilt_num - 1:
             kid_q_standard_num_list[i] = q_standard_split_num
-            kid_q_small_num_list[i] = q_small_split_num
-            kid_q_box_num_list[i] = q_box_split_num
+            kid_q_small_num_list[i] = q_small_split_num * 0.5
+            kid_q_box_num_list[i] = q_box_split_num * 0.25
         else:
             kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
             kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
@@ -42,10 +42,13 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
             if i == 0:
                 if q_standard_split_num == 0 and request_item_map["q_standard"]:
                     q_standard_items_id = request_item_map["q_standard"]
+                    kid_requests[kid_requestID]["pallets"]["q_standard"] += len(request_item_map["q_standard"])
                 if q_small_split_num == 0 and request_item_map["q_small"]:
                     q_small_items_id = request_item_map["q_small"]
+                    kid_requests[kid_requestID]["pallets"]["q_small"] += 0.5 * len(request_item_map["q_small"])
                 if q_box_split_num == 0 and request_item_map["q_box"]:
                     q_box_items_id = request_item_map["q_box"]
+                    kid_requests[kid_requestID]["pallets"]["q_box"] += 0.25 * len(request_item_map["q_box"])
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
                                                    "q_small": q_small_items_id,
                                                    "q_box": q_box_items_id}
