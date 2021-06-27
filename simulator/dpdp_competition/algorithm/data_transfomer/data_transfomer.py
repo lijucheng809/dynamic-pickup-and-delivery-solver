@@ -17,8 +17,8 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
     for i in range(spilt_num):
         if i < spilt_num - 1:
             kid_q_standard_num_list[i] = q_standard_split_num
-            kid_q_small_num_list[i] = q_small_split_num * 0.5
-            kid_q_box_num_list[i] = q_box_split_num * 0.25
+            kid_q_small_num_list[i] = q_small_split_num
+            kid_q_box_num_list[i] = q_box_split_num
         else:
             if q_standard_split_num != 0:
                 kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
@@ -30,8 +30,8 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
         kid_requestID = requestID + "-{}".format(i + 1)
         kid_requests[kid_requestID] = deepcopy(request)
         kid_requests[kid_requestID]["pallets"]["q_standard"] = kid_q_standard_num_list[i]
-        kid_requests[kid_requestID]["pallets"]["q_small"] = kid_q_small_num_list[i]
-        kid_requests[kid_requestID]["pallets"]["q_box"] = kid_q_box_num_list[i]
+        kid_requests[kid_requestID]["pallets"]["q_small"] = 0.5 * kid_q_small_num_list[i]
+        kid_requests[kid_requestID]["pallets"]["q_box"] = 0.25 * kid_q_box_num_list[i]
         process_time = 0
         if i < spilt_num - 1:
             if request_item_map["q_standard"] and q_standard_split_num != 0:
