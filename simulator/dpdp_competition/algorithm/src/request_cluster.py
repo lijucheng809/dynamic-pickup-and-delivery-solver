@@ -78,3 +78,28 @@ def cluster(requests):
                 request_id = str(request_id)
                 new_requests[request_id] = sample_request
     return new_requests, old_requests_map
+
+
+def ongoing_request_cluster(request_id_on_order: list, requests_items_map: dict, ongoing_items_map: dict,
+                            vehicle_id: str):
+    id = 1000
+    new_request_id_on_order = []
+    new_requests_items_map = {}
+    n = len(request_id_on_order)
+    left, rk = 0, 0
+
+    while left < n:
+        while rk + 1 < n and ongoing_items_map[requests_items_map[request_id_on_order[rk + 1]]["delivery_only"][0]][
+            "delivery_factory_id"] \
+                == ongoing_items_map[requests_items_map[request_id_on_order[left]]["delivery_only"][0]]["delivery_factory_id"]:
+            rk += 1
+        new_id = str(id) + vehicle_id
+        new_request_id_on_order.append(new_id)
+        new_requests_items_map[new_id] = {"delivery_only": []}
+        for i in range(left, rk+1):
+            for item_id in requests_items_map[request_id_on_order[i]]["delivery_only"]:
+                new_requests_items_map[new_id]["delivery_only"].append(item_id)
+        id += 1
+        left = rk + 1
+        rk += 1
+    return new_request_id_on_order, new_requests_items_map

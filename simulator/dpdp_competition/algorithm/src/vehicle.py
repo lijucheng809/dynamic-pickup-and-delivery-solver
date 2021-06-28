@@ -249,24 +249,29 @@ class vehicle(object):
             for item_id in requests_items_map[requestID]["delivery_only"]:
                 volume -= ongoing_items_map[item_id]["demand"]
                 process_time += ongoing_items_map[item_id]["unload_time"]
+                creation_time = ongoing_items_map[item_id]["creation_time"]
+                committed_completion_time = ongoing_items_map[item_id]["committed_completion_time"]
+                creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
+                committed_completion_time = time.strftime("%Y-%m-%d %H:%M:%S",
+                                                          time.localtime(committed_completion_time))
+                creation_time = datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S")
+                committed_completion_time = datetime.strptime(committed_completion_time, "%Y-%m-%d %H:%M:%S")
                 if not time_window_left and not time_window_right:
-                    creation_time = ongoing_items_map[item_id]["creation_time"]
-                    committed_completion_time = ongoing_items_map[item_id]["committed_completion_time"]
-                    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
-                    committed_completion_time = time.strftime("%Y-%m-%d %H:%M:%S",
-                                                              time.localtime(committed_completion_time))
                     time_window_left = creation_time
                     time_window_right = committed_completion_time
                     requestID_temp = requestID[:requestID.index("V")]
                     if requestID_temp in time_out_requests:
                         time_window_right = time_out_requests[requestID_temp]["pickup_demand_info"]["time_window"][1]
+                else:
+                    time_window_left = max(creation_time, time_window_left)
+                    time_window_right = min(committed_completion_time, time_window_right)
             # requestID = requestID + "_ongoing"
             node = customer_request_combination(customerID,
                                                 requestID,
                                                 "delivery",
                                                 None,
                                                 volume,
-                                                [time_window_left, time_window_right],
+                                                [str(time_window_left), str(time_window_right)],
                                                 process_time,
                                                 self._vehicleID)
             left_node = self._route[len(self._route) - 1]

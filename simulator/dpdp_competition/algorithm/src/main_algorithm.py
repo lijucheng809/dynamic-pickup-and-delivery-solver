@@ -13,7 +13,7 @@ from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
     feasibleRearrangePortAssignmentSchedule
-from simulator.dpdp_competition.algorithm.src.request_cluster import cluster
+from simulator.dpdp_competition.algorithm.src.request_cluster import cluster, ongoing_request_cluster
 
 
 def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
@@ -187,7 +187,13 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                           ongoing_items_map[item_id]["delivery_factory_id"],
                                           customer_id_info_map)
                 load_volume += ongoing_items_map[item_id]["demand"]
-            requests_items_map.update(requests_items_map_temp)
+            # TODO 对载货订单进行聚类
+            new_request_id_on_order, new_requests_items_map = ongoing_request_cluster(request_id_on_order,
+                                                                                      requests_items_map_temp,
+                                                                                      ongoing_items_map,
+                                                                                      vehicleID)
+            requests_items_map.update(new_requests_items_map)
+            # requests_items_map.update(requests_items_map_temp)
             arrive_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(vehicle_info["destination"]["arrive_time"]))
             arrive_time = datetime.strptime(arrive_time, "%Y-%m-%d %H:%M:%S")
             customerID = vehicle_info["destination"]["factory_id"]
@@ -198,7 +204,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             vehicleObject.getCurrentRoute[0].setVehicleDepartureTime(arrive_time)
             dvrppd_Solver.addVehicle2Pool({vehicle_info["id"]: vehicleObject})
             dvrppd_Solver.getVehiclesPool[vehicleID].gen_fix_route(dvrppd_Solver.getCustomerPool,
-                                                                   request_id_on_order,
+                                                                   new_request_id_on_order,
                                                                    ongoing_items_map,
                                                                    requests_items_map)
 
@@ -246,6 +252,7 @@ def scheduling():
                     request_info["requests"][requestID]["delivery_timeWindow"][1] = \
                         time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
     new_requests, old_requests_map = cluster(deepcopy(request_info["requests"]))
+
     dvrppd_Solver = DVRPPD_Solver(old_requests_map)
     pushRequests2Solver(dvrppd_Solver, new_requests, customer_id_info_map)
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
@@ -260,7 +267,7 @@ def scheduling():
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
     # if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3 and flag:
     #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
-    dvrppd_Solver.foliumPlot(customer_id_info_map)
+    # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
     data_transfomer.__solution_algo_2_sim(vehicle_route,
