@@ -217,7 +217,11 @@ def scheduling():
     if os.path.exists(configs.middle_vehicle_info_path):
         with open(configs.middle_vehicle_info_path, "r") as f:
             middle_vehicle_info = json.load(f)
-
+    flag = True
+    for vehicle_info in vehicles_info:
+        if vehicle_info["destination"]:
+            flag = False
+            break
     ongoing_items_map = {}
     for item in ongoing_items:
         ongoing_items_map[item["id"]] = item
@@ -234,6 +238,8 @@ def scheduling():
     middle_tim = time.time()
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
     # if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3:
+    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    # if flag:
     #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
     dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool

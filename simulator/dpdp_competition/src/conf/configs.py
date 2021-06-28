@@ -27,6 +27,7 @@ class Configs(object):
     # 算法切片的时间间隔, time interval of simulator
     ALG_RUN_FREQUENCY = 25  # 单位分钟
 
+
     # 多目标权重之间的系数
     LAMDA = 10000
 
