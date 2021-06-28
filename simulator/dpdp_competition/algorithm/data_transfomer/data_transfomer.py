@@ -70,7 +70,7 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
             else:
                 q_small_items_id = []
             if request_item_map["q_box"] and q_box_split_num != 0:
-                q_box_items_id = request_item_map["q_box"][(spilt_num-1)*q_box_split_num]
+                q_box_items_id = request_item_map["q_box"][(spilt_num-1)*q_box_split_num:]
             else:
                 q_box_items_id = []
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
