@@ -252,7 +252,6 @@ def scheduling():
                     request_info["requests"][requestID]["delivery_timeWindow"][1] = \
                         time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
     new_requests, old_requests_map = cluster(deepcopy(request_info["requests"]))
-
     dvrppd_Solver = DVRPPD_Solver(old_requests_map)
     pushRequests2Solver(dvrppd_Solver, new_requests, customer_id_info_map)
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,

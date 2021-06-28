@@ -311,7 +311,7 @@ class GreedyInsertionOperator(insertOperator):
                                                                        demand_type,
                                                                        arrive_time,
                                                                        requestID,
-                                                                       request,
+                                                                       deepcopy(request),
                                                                        route_index):
             self._source_pool = deepcopy(source_pool_temp)
             self._vehicle_customer_match()

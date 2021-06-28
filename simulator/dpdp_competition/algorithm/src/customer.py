@@ -269,7 +269,7 @@ class customer(object):
                     self._port_reserveTable[indexes[1]].append(node)
                     q_dispatchedNode.put((node.vehicleDepartureTime, indexes[1]))
                 else:
-                    print(node_departure_time, latest_leave_time)
+                    # print(node_departure_time, latest_leave_time)
                     return None
 
         self.gen_node_port_map()
