@@ -156,7 +156,7 @@ class DVRPPD_Solver(object):
                 tw_left = datetime.strptime(requests_info[requestID]["pickup_demand_info"]["time_window"][0],
                                              "%Y-%m-%d %H:%M:%S")
                 tw_right = tw_left + timedelta(hours=4)
-                if tw_right + timedelta(minutes=30) < self._time2Go:
+                if tw_right + timedelta(minutes=90) < self._time2Go:
                     self._time_over_requests[requestID] = requests_info[requestID]
                 if null_vehicles:
                     earliest_finish_time = datetime.strptime(

@@ -31,8 +31,7 @@ def cluster(requests):
                 min_tw_right = min(tw_right, request_batch[id][request_id]["min_tw_right"])
                 max_tw_right = max(tw_right, request_batch[id][request_id]["max_tw_right"])
                 if volume + request_batch[id][request_id]["volume"] <= configs.vehicle_capacity and \
-                        min_creation_time + timedelta(hours=1) >= max_creation_time and \
-                        min_tw_right + timedelta(hours=1) >= max_tw_right:
+                        min_creation_time + timedelta(minutes=90) >= max_creation_time:
                     flag = False
                     request_batch[id][request_id]["old_requestID"].append(requestID)
                     request_batch[id][request_id]["volume"] += volume
