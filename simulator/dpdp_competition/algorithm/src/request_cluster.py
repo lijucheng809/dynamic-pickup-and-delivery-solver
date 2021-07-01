@@ -31,7 +31,7 @@ def cluster(requests):
                 min_tw_right = min(tw_right, request_batch[id][request_id]["min_tw_right"])
                 max_tw_right = max(tw_right, request_batch[id][request_id]["max_tw_right"])
                 if volume + request_batch[id][request_id]["volume"] <= configs.vehicle_capacity and \
-                        min_creation_time + timedelta(minutes=90) >= max_creation_time:
+                        min_creation_time + timedelta(hours=12) >= max_creation_time:
                     flag = False
                     request_batch[id][request_id]["old_requestID"].append(requestID)
                     request_batch[id][request_id]["volume"] += volume
@@ -69,8 +69,9 @@ def cluster(requests):
                 sample_request["pallets"]["q_box"] = q_box_num
                 sample_request["demand"] = q_standard_num + q_small_num + q_box_num
                 assert request_batch[id][request_id]["volume"] == sample_request["demand"]
-                left_tw = str(request_batch[id][request_id]["max_creation_time"])
+                left_tw = str(request_batch[id][request_id]["min_creation_time"])
                 right_tw = str(request_batch[id][request_id]["max_tw_right"])
+                sample_request["creation_time"] = left_tw
                 sample_request["pickup_timeWindow"] = [left_tw, right_tw]
                 sample_request["delivery_timeWindow"] = [left_tw, right_tw]
                 sample_request["load/unload_time"] = process_time
