@@ -290,7 +290,7 @@ class vehicle(object):
                 # assert flag
                 print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
 
-    def force_insertion(self, request, travelCost_solver=costDatabase()):
+    def force_insertion(self, request, customers, travelCost_solver=costDatabase()):
         pickup_customer_id = request["pickup_demand_info"]["customer_id"]
         delivery_customer_id = request["delivery_demand_info"]["customer_id"]
         requestID = request["requestID"]
@@ -331,6 +331,12 @@ class vehicle(object):
         delivery_node.setVehicleDepartureTime(departure_time)
         left_node.setRightNode(delivery_node)
         delivery_node.setLeftNode(left_node)
+        pickup_node.setBrotherNode(delivery_node)
+        delivery_node.setBrotherNode(pickup_node)
+        if pickup_node.requestID not in customers[pickup_node.customerID].getDispatchedRequestSet:
+            customers[pickup_node.customerID].getDispatchedRequestSet[pickup_node.requestID] = pickup_node
+        if delivery_node.requestID not in customers[delivery_node.customerID].getDispatchedRequestSet:
+            customers[delivery_node.customerID].getDispatchedRequestSet[delivery_node.requestID] = delivery_node
         self._route.append(delivery_node)
 
     def activateVehicle(self, volume=0):

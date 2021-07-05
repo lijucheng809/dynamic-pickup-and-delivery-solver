@@ -156,7 +156,7 @@ class DVRPPD_Solver(object):
                 tw_left = datetime.strptime(requests_info[requestID]["pickup_demand_info"]["time_window"][0],
                                              "%Y-%m-%d %H:%M:%S")
                 tw_right = tw_left + timedelta(hours=4)
-                if tw_right + timedelta(minutes=100) < self._time2Go:
+                if tw_right + timedelta(minutes=120) < self._time2Go:
                     self._time_over_requests[requestID] = requests_info[requestID]
                 if null_vehicles:
                     earliest_finish_time = datetime.strptime(
@@ -179,7 +179,9 @@ class DVRPPD_Solver(object):
                             best_insertion_vehicle = vehicleID
                     if requestID in self._time_over_requests:
                         self._time_over_requests.pop(requestID)
-                    self._vehiclesPool[best_insertion_vehicle].force_insertion(requests_info[requestID])
+                    self._requestsPool.updateDispatchedRequestPool(requests_info[requestID]["requestID"], "add")
+                    self._vehiclesPool[best_insertion_vehicle].force_insertion(requests_info[requestID],
+                                                                               self._customersPool)
                     null_vehicles.remove(best_insertion_vehicle)
 
     def constructEngine(self,
@@ -310,6 +312,7 @@ class DVRPPD_Solver(object):
             if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
                 self._vehiclesPool[vehicleID].updateTravelCost(self._travelCost_solver)
                 self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
+                self.objective_score += self._vehiclesPool[vehicleID].getMileage
 
     def foliumPlot(self, customer_id_info_map):
         # vehicle_node_map = dict()

@@ -101,7 +101,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
             if pickup_node.requestID in self._customers[pickup_node.customerID].get_node_port_map:
                 p_port_index = self._customers[pickup_node.customerID].get_node_port_map[pickup_node.requestID]
                 self._customers[pickup_node.customerID].deleteNodeFromPort(p_port_index[0], p_port_index[1])
-
             if pickup_node.brotherNode.requestID in self._customers[pickup_node.brotherNode.customerID].get_node_port_map:
                 d_port_index = self._customers[pickup_node.brotherNode.customerID].get_node_port_map[pickup_node.brotherNode.requestID]
                 self._customers[pickup_node.brotherNode.customerID].deleteNodeFromPort(d_port_index[0], d_port_index[1])
@@ -260,7 +259,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
 
     def _SA_accept(self) -> bool:
         temp_score = self.repairOperator["engine"].getObjectiveScore
-        # print("待决策方案的score: ", temp_score)
+        print("待决策方案的score: ", temp_score, file=sys.stderr)
         if temp_score < self._currentSolution["score"]:
             return True
         else:
@@ -332,10 +331,10 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._vehicles = source_pool_temp.vehicles
                 self._customers = source_pool_temp.customers
                 self._requests = source_pool_temp.requests
-            #
-            # print("iteration is: ", total_iteration_count,
-            #       " best score: ", self._bestSolution["score"],
-            #       " current score: ", self._currentSolution["score"])
+
+            print("iteration is: ", total_iteration_count,
+                  " best score: ", self._bestSolution["score"],
+                  " current score: ", self._currentSolution["score"], file=sys.stderr)
         print("ALNS score is:", self._bestSolution["score"], file=sys.stderr)
 
     @property

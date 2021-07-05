@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import time
 import os
 from copy import deepcopy
+import math
 
 from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPD_Solver
@@ -265,8 +266,8 @@ def scheduling():
     dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 1)  # 构造解
     middle_tim = time.time()
     left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
-    # if len(request_info["requests"]) > 3 and left_time_2_heuristic > 3 and flag:
-    #     dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=left_time_2_heuristic)
+    if len(new_requests) > 10 and left_time_2_heuristic > 3:
+        dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=2)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)
     vehicle_route = dvrppd_Solver.getVehiclesPool
     customers = dvrppd_Solver.getCustomerPool
