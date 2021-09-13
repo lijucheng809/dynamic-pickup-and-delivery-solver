@@ -16,7 +16,7 @@ from simulator.dpdp_competition.algorithm.src.customer import customer
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class insertOperator(metaclass=ABCMeta):
+class InsertOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def insert(self):
@@ -27,21 +27,21 @@ class insertOperator(metaclass=ABCMeta):
         pass
 
 
-class removeOperator(metaclass=ABCMeta):
+class RemoveOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def remove(self, remove_number: int):
         pass
 
 
-class localSearchOperator(metaclass=ABCMeta):
+class LocalSearchOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def move(self):
         pass
 
 
-class ShawRemovalOperator(removeOperator):
+class ShawRemovalOperator(RemoveOperator):
     def __init__(self, vehicles: Dict[str, vehicle]):
         self._vehicles = vehicles
         # 对到达时间和货量进行normalized
@@ -148,7 +148,7 @@ class RandomRemovalOperator(ShawRemovalOperator):
         return removals
 
 
-class WorstRemovalOperator(removeOperator):
+class WorstRemovalOperator(RemoveOperator):
     def __init__(self, vehicles: Dict[str, vehicle], travelCost_solver=costDatabase()):
         self._initVehicles = vehicles
         self._vehicles = deepcopy(vehicles)
@@ -211,7 +211,7 @@ class WorstRemovalOperator(removeOperator):
         return removals
 
 
-class GreedyInsertionOperator(insertOperator):
+class GreedyInsertionOperator(InsertOperator):
     def __init__(self,
                  vehicles: Dict[str, vehicle],
                  requests: requestPool,
