@@ -5,14 +5,14 @@ from datetime import datetime
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class travelCost(metaclass=ABCMeta):
+class TravelCost(metaclass=ABCMeta):
 
     @abstractmethod
     def getTravelCost(self, startPoint: str, endPoint: str, inquireTime: object = datetime.now()) -> dict:
         pass
 
 
-class costDatabase(travelCost):
+class CostDatabase(TravelCost):
     def __init__(self):
         with open(configs.route_cost_map_path) as f:
             self._route_cost_map = json.load(f)

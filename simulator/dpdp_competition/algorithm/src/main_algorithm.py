@@ -6,13 +6,13 @@ import os
 from copy import deepcopy
 import math
 
-from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.customer import Customer
 from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPD_Solver
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
 from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.conf.configs import configs
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
+from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, \
     feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.src.request_cluster import cluster, ongoing_request_cluster
 
@@ -38,14 +38,14 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
         if order_id_info_map[orderID]["pickup_customer_id"] not in dvrppd_Solver.getCustomerPool:
             pickupCustomerID, pickupCustomerPosition, pickupCustomerPortNum = \
                 getPDCustomerInfo("pickup_customer_id")
-            pickupCustomerObject = customer(pickupCustomerPosition, pickupCustomerID, pickupCustomerPortNum)
+            pickupCustomerObject = Customer(pickupCustomerPosition, pickupCustomerID, pickupCustomerPortNum)
             dvrppd_Solver.addCustomer2Pool({order_id_info_map[orderID]["pickup_customer_id"]: pickupCustomerObject})
         else:
             pickupCustomerObject = dvrppd_Solver.getCustomerObject(order_id_info_map[orderID]["pickup_customer_id"])
         if order_id_info_map[orderID]["delivery_customer_id"] not in dvrppd_Solver.getCustomerPool:
             deliveryCustomerID, deliveryCustomerPosition, deliveryCustomerPortNum = \
                 getPDCustomerInfo("delivery_customer_id")
-            deliveryCustomerObject = customer(deliveryCustomerPosition, deliveryCustomerID, deliveryCustomerPortNum)
+            deliveryCustomerObject = Customer(deliveryCustomerPosition, deliveryCustomerID, deliveryCustomerPortNum)
             dvrppd_Solver.addCustomer2Pool(
                 {order_id_info_map[orderID]["delivery_customer_id"]: deliveryCustomerObject})
         else:
@@ -99,7 +99,7 @@ def pushRequests2Solver(dvrppd_Solver, order_id_info_map, customer_id_info_map):
 
 def __gen_customer_object(dvrppd_Solver, customerID, customer_id_info_map):
     position = [customer_id_info_map[customerID]["lng"], customer_id_info_map[customerID]["lat"]]
-    customerObject = customer(position, customerID, customer_id_info_map[customerID]["port_num"])
+    customerObject = Customer(position, customerID, customer_id_info_map[customerID]["port_num"])
     dvrppd_Solver.addCustomer2Pool({customerID: customerObject})
 
 
@@ -137,14 +137,14 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                                   time.localtime(vehicle_info["leave_time_at_current_factory"]))
                 time_window_right = datetime.strptime(time_window_right, "%Y-%m-%d %H:%M:%S")
                 process_time = (time_window_right - time_window_left).seconds
-                node = customer_request_combination(customerID,
-                                                    requestID,
+                node = CustomerRequestCombination(customerID,
+                                                  requestID,
                                                     "parking",
-                                                    None,
-                                                    0,
-                                                    [str(time_window_left), str(time_window_right)],
-                                                    process_time,
-                                                    vehicleID)
+                                                  None,
+                                                  0,
+                                                  [str(time_window_left), str(time_window_right)],
+                                                  process_time,
+                                                  vehicleID)
                 node.setVehicleArriveTime(time_window_left)
                 if node.requestID not in dvrppd_Solver.getCustomerPool[node.customerID].getDispatchedRequestSet:
                     dvrppd_Solver.getCustomerPool[node.customerID].getDispatchedRequestSet[node.requestID] = node
@@ -155,7 +155,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
                                        time.localtime(vehicle_info["leave_time_at_current_factory"]))
             leave_time = datetime.strptime(leave_time, "%Y-%m-%d %H:%M:%S")
             position = [customer_id_info_map[customerID]["lng"], customer_id_info_map[customerID]["lat"]]
-            vehicleObject = vehicle(vehicleID, capacity, position, customerID)
+            vehicleObject = Vehicle(vehicleID, capacity, position, customerID)
             vehicleObject.activateVehicle(volume=0)
             if leave_time > time2Go:
                 time2Go = leave_time
@@ -169,11 +169,11 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             request_id_on_order = []  # 存放将来生成固定线路的node顺序
             mileage = 0
             if vehicle_info["cur_factory_id"] and vehicle_info["destination"]:
-                travel_cost = costDatabase().getTravelCost(vehicle_info["cur_factory_id"],
+                travel_cost = CostDatabase().getTravelCost(vehicle_info["cur_factory_id"],
                                                            vehicle_info["destination"]["factory_id"])
                 mileage = travel_cost["distance"]
             elif not vehicle_info["cur_factory_id"] and vehicle_info["destination"]:
-                travel_cost = costDatabase().getTravelCost(middle_vehicle_info[vehicleID]["start"],
+                travel_cost = CostDatabase().getTravelCost(middle_vehicle_info[vehicleID]["start"],
                                                            vehicle_info["destination"]["factory_id"])
                 mileage = travel_cost["distance"]
             for item_id in carrying_items:
@@ -199,7 +199,7 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
             arrive_time = datetime.strptime(arrive_time, "%Y-%m-%d %H:%M:%S")
             customerID = vehicle_info["destination"]["factory_id"]
             position = [customer_id_info_map[customerID]["lng"], customer_id_info_map[customerID]["lat"]]
-            vehicleObject = vehicle(vehicleID, capacity, position, customerID, mileage=mileage)
+            vehicleObject = Vehicle(vehicleID, capacity, position, customerID, mileage=mileage)
             vehicleObject.activateVehicle(volume=load_volume)
             vehicleObject.getCurrentRoute[0].setVehicleArriveTime(arrive_time)
             vehicleObject.getCurrentRoute[0].setVehicleDepartureTime(arrive_time)
