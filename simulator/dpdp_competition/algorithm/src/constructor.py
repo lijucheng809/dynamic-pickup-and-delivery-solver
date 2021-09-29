@@ -3,14 +3,14 @@ from copy import deepcopy
 from typing import Dict
 from datetime import datetime
 
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.customer import customer
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
+from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
+from simulator.dpdp_competition.algorithm.src.customer import Customer
+from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
 from simulator.dpdp_competition.algorithm.src.Operator import GreedyInsertionOperator, RegretInsertionOperator
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class constructor(metaclass=ABCMeta):
+class Constructor(metaclass=ABCMeta):
 
     @abstractmethod
     def solve(self):
@@ -21,11 +21,11 @@ class constructor(metaclass=ABCMeta):
         pass
 
 
-class solomonInsertionHeuristic(constructor):
+class SolomonInsertionHeuristic(Constructor):
     def __init__(self,
-                 vehicles: Dict[str, vehicle],
-                 requests: requestPool,
-                 customers: Dict[str, customer],
+                 vehicles: Dict[str, Vehicle],
+                 requests: RequestPool,
+                 customers: Dict[str, Customer],
                  travelCost_Solver):
         self._vehicles = deepcopy(vehicles)
         self._requests = deepcopy(requests)

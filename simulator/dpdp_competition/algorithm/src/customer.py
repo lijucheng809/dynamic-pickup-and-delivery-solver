@@ -2,12 +2,12 @@ from typing import List, Dict
 from datetime import datetime, timedelta
 from queue import PriorityQueue
 
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class customer(object):
+class Customer(object):
     def __init__(self,
                  position,
                  customerID,
@@ -115,7 +115,7 @@ class customer(object):
 
         return right_node
 
-    def rearrangeReservedPort(self, tp="normal", travelCost_solver=costDatabase()):
+    def rearrangeReservedPort(self, tp="normal", travelCost_solver=CostDatabase()):
         """
         当有新的装卸需求插入时，可能会打乱当前卡位的分配方案，需要对车辆进行重新分配卡位，按照先到先服务原则
         :return:
@@ -321,7 +321,7 @@ class customer(object):
                         continue
         return False
 
-    def releasePort(self, nodes: List[customer_request_combination]):
+    def releasePort(self, nodes: List[CustomerRequestCombination]):
         """
         当完成装卸货作业后，删除锁定的该时间段，减少分配卡位所需的搜索时间。
         逻辑上nodes应该是在port列表中的第一位

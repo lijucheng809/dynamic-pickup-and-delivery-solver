@@ -8,9 +8,9 @@ import sys
 from queue import PriorityQueue
 from copy import deepcopy
 
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.constructor import solomonInsertionHeuristic
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
+from simulator.dpdp_competition.algorithm.src.constructor import SolomonInsertionHeuristic
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
 from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
 from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
@@ -20,11 +20,11 @@ from simulator.dpdp_competition.algorithm.conf.configs import configs
 class DVRPPD_Solver(object):
     def __init__(self, old_request_map: dict):
         self._vehiclesPool = dict()
-        self._requestsPool = requestPool()
+        self._requestsPool = RequestPool()
         self._customersPool = dict()
         self.weighted_objective = configs.weighted_objective_function
         self.objective_score = np.infty
-        self._travelCost_solver = costDatabase()
+        self._travelCost_solver = CostDatabase()
         self._fail_insertion_list = {}
         self._time2Go = None
         self._time_over_requests = {}
@@ -197,7 +197,7 @@ class DVRPPD_Solver(object):
             if not self._scheduleNormal(vehicleID) or not self._currentRouteFeasible(vehicleID):
                 self._rearrangeRoute(vehicleID)
 
-        constructor = solomonInsertionHeuristic(self._vehiclesPool,
+        constructor = SolomonInsertionHeuristic(self._vehiclesPool,
                                                 self._requestsPool,
                                                 self._customersPool,
                                                 self._travelCost_solver)
