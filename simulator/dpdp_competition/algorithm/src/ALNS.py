@@ -6,28 +6,28 @@ import math
 from datetime import datetime, timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.src.customer import customer
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
+from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
+from simulator.dpdp_competition.algorithm.src.customer import Customer
+from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
 from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
     RegretInsertionOperator
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, sourcePool
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, SourcePool
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
 class AdaptiveLargeNeighborhoodSearch(object):
     # ref: Ropke, Pisinge 2006 - TS
     def __init__(self,
-                 vehicles: Dict[str, vehicle],
-                 requests: requestPool,
-                 customers: Dict[str, customer],
+                 vehicles: Dict[str, Vehicle],
+                 requests: RequestPool,
+                 customers: Dict[str, Customer],
                  objective_score: float,
-                 travelCost_solver: costDatabase,
+                 travelCost_solver: CostDatabase,
                  time2Go,
                  start_time = time.time(),
                  mission="improvement"):
-        self._source_pool = deepcopy(sourcePool(vehicles, customers, requests))
+        self._source_pool = deepcopy(SourcePool(vehicles, customers, requests))
         self._customers = self._source_pool.customers
         self._requests = self._source_pool.requests
         self._vehicles = self._source_pool.vehicles
@@ -101,7 +101,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
             if pickup_node.requestID in self._customers[pickup_node.customerID].get_node_port_map:
                 p_port_index = self._customers[pickup_node.customerID].get_node_port_map[pickup_node.requestID]
                 self._customers[pickup_node.customerID].deleteNodeFromPort(p_port_index[0], p_port_index[1])
-
             if pickup_node.brotherNode.requestID in self._customers[pickup_node.brotherNode.customerID].get_node_port_map:
                 d_port_index = self._customers[pickup_node.brotherNode.customerID].get_node_port_map[pickup_node.brotherNode.requestID]
                 self._customers[pickup_node.brotherNode.customerID].deleteNodeFromPort(d_port_index[0], d_port_index[1])
@@ -260,7 +259,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
 
     def _SA_accept(self) -> bool:
         temp_score = self.repairOperator["engine"].getObjectiveScore
-        # print("待决策方案的score: ", temp_score)
+        print("待决策方案的score: ", temp_score, file=sys.stderr)
         if temp_score < self._currentSolution["score"]:
             return True
         else:
@@ -291,14 +290,14 @@ class AdaptiveLargeNeighborhoodSearch(object):
                         self._customers[customerID].gen_node_port_map()
                     score = self.repairOperator["engine"].getObjectiveScore
                     self._currentSolution = {"score": score,
-                                             "source_pool": deepcopy(sourcePool(self._vehicles,
+                                             "source_pool": deepcopy(SourcePool(self._vehicles,
                                                                                 self._customers,
                                                                                 self._requests))}
 
                     if score < self._bestSolution["score"]:
                         self._updateOperatorScore(configs.alns_found_best)
                         self._bestSolution = {"score": score,
-                                              "source_pool": deepcopy(sourcePool(self._vehicles,
+                                              "source_pool": deepcopy(SourcePool(self._vehicles,
                                                                                  self._customers,
                                                                                  self._requests))}
                     else:
@@ -332,10 +331,10 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._vehicles = source_pool_temp.vehicles
                 self._customers = source_pool_temp.customers
                 self._requests = source_pool_temp.requests
-            #
-            # print("iteration is: ", total_iteration_count,
-            #       " best score: ", self._bestSolution["score"],
-            #       " current score: ", self._currentSolution["score"])
+
+            print("iteration is: ", total_iteration_count,
+                  " best score: ", self._bestSolution["score"],
+                  " current score: ", self._currentSolution["score"], file=sys.stderr)
         print("ALNS score is:", self._bestSolution["score"], file=sys.stderr)
 
     @property

@@ -44,3 +44,5 @@ class configs(object):
     sa_cool_rate = 0.99975
     alns_request_remove_number_coff = 0.4
     alns_reaction_parameter = 0.3
+
+    vehicle_capacity = 15

@@ -8,15 +8,15 @@ from copy import deepcopy
 import sys
 from queue import PriorityQueue
 
-from simulator.dpdp_competition.algorithm.src.vehicle import vehicle
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, sourcePool, checks
-from simulator.dpdp_competition.algorithm.src.requestPool import requestPool
-from simulator.dpdp_competition.algorithm.src.customer import customer
+from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, SourcePool, Checks
+from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
+from simulator.dpdp_competition.algorithm.src.customer import Customer
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class InsertOperator(metaclass=ABCMeta):
+class insertOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def insert(self):
@@ -27,22 +27,22 @@ class InsertOperator(metaclass=ABCMeta):
         pass
 
 
-class RemoveOperator(metaclass=ABCMeta):
+class removeOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def remove(self, remove_number: int):
         pass
 
 
-class LocalSearchOperator(metaclass=ABCMeta):
+class localSearchOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def move(self):
         pass
 
 
-class ShawRemovalOperator(RemoveOperator):
-    def __init__(self, vehicles: Dict[str, vehicle]):
+class ShawRemovalOperator(removeOperator):
+    def __init__(self, vehicles: Dict[str, Vehicle]):
         self._vehicles = vehicles
         # 对到达时间和货量进行normalized
         min_arriveTime = np.infty
@@ -74,8 +74,8 @@ class ShawRemovalOperator(RemoveOperator):
                         self._vehicles[vehicleID].getCurrentRoute[i].setNormalVolume(volume_normal)
 
     @staticmethod
-    def _relatedness(request_1: customer_request_combination,
-                     request_2: customer_request_combination):
+    def _relatedness(request_1: CustomerRequestCombination,
+                     request_2: CustomerRequestCombination):
         """
         两个request应该都是pickup点
         :param request_1:
@@ -83,8 +83,8 @@ class ShawRemovalOperator(RemoveOperator):
         :return: relatedness value
         """
         assert request_1.demandType == "pickup" or request_2.demandType == "pickup"
-        distance_p1_p2 = costDatabase().getTravelCost(request_1.customerID, request_2.customerID)["normal_distance"]
-        distance_d1_d2 = costDatabase().getTravelCost(request_1.brotherNode.customerID,
+        distance_p1_p2 = CostDatabase().getTravelCost(request_1.customerID, request_2.customerID)["normal_distance"]
+        distance_d1_d2 = CostDatabase().getTravelCost(request_1.brotherNode.customerID,
                                                       request_2.brotherNode.customerID)["normal_distance"]
         diff_arriveTime_p1_p2 = abs(request_1.vehicleArriveTime_normal - request_2.vehicleArriveTime_normal)
         diff_arriveTime_d1_d2 = abs(request_1.brotherNode.vehicleArriveTime_normal
@@ -136,7 +136,7 @@ class ShawRemovalOperator(RemoveOperator):
 
 
 class RandomRemovalOperator(ShawRemovalOperator):
-    def __init__(self, vehicles: Dict[str, vehicle]):
+    def __init__(self, vehicles: Dict[str, Vehicle]):
         self._vehicles = vehicles
 
     def remove(self, remove_number: int):
@@ -148,8 +148,8 @@ class RandomRemovalOperator(ShawRemovalOperator):
         return removals
 
 
-class WorstRemovalOperator(RemoveOperator):
-    def __init__(self, vehicles: Dict[str, vehicle], travelCost_solver=costDatabase()):
+class WorstRemovalOperator(removeOperator):
+    def __init__(self, vehicles: Dict[str, Vehicle], travelCost_solver=CostDatabase()):
         self._initVehicles = vehicles
         self._vehicles = deepcopy(vehicles)
         self._pickupNode = dict()
@@ -165,7 +165,7 @@ class WorstRemovalOperator(RemoveOperator):
                     else:
                         continue
 
-    def _getDifferentCost(self, pickup_node: customer_request_combination):
+    def _getDifferentCost(self, pickup_node: CustomerRequestCombination):
         assert pickup_node.demandType == "pickup"
         delivery_node = pickup_node.brotherNode
         pickup_node_index = self._vehicles[pickup_node.vehicleID].getCurrentRoute.index(pickup_node)
@@ -181,7 +181,7 @@ class WorstRemovalOperator(RemoveOperator):
         new_cost = deepcopy(vehicle.getCurrentRouteCost)
         return old_cost - new_cost
 
-    def _removeNodeFromRoute(self, pickup_node: customer_request_combination):
+    def _removeNodeFromRoute(self, pickup_node: CustomerRequestCombination):
         assert pickup_node.demandType == "pickup"
         delivery_node = pickup_node.brotherNode
         self._vehicles[pickup_node.vehicleID].getCurrentRoute.remove(pickup_node)
@@ -211,13 +211,13 @@ class WorstRemovalOperator(RemoveOperator):
         return removals
 
 
-class GreedyInsertionOperator(InsertOperator):
+class GreedyInsertionOperator(insertOperator):
     def __init__(self,
-                 vehicles: Dict[str, vehicle],
-                 requests: requestPool,
-                 customers: Dict[str, customer],
+                 vehicles: Dict[str, Vehicle],
+                 requests: RequestPool,
+                 customers: Dict[str, Customer],
                  travelCost_solver):
-        self._source_pool = sourcePool(vehicles, customers, requests)
+        self._source_pool = SourcePool(vehicles, customers, requests)
         for customerID in self._source_pool.customers:
             self._source_pool.customers[customerID].gen_node_port_map()
         self._travelCost_solver = travelCost_solver
@@ -256,7 +256,7 @@ class GreedyInsertionOperator(InsertOperator):
         return available_vehicleID_set, minpq_unDispatched_request
 
     def _time_window_constrain(self,
-                               pre_node: customer_request_combination,
+                               pre_node: CustomerRequestCombination,
                                target_customer_id: str,
                                demand_type: str,
                                request: dict):
@@ -290,9 +290,11 @@ class GreedyInsertionOperator(InsertOperator):
         route_length = len(self._source_pool.vehicles[vehicleID].getCurrentRoute)
         request_volume = request["pickup_demand_info"]["volume"]
         vehicle_capacity = self._source_pool.vehicles[vehicleID].getCapacity
-        for i in range(route_index, route_length):
-            if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(i+1) > vehicle_capacity:
-                return False
+        # for i in range(route_index, route_length):
+        #     if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(i+1) > vehicle_capacity:
+        #         return False
+        if request_volume + self._source_pool.vehicles[vehicleID].getCurrentVolume(route_index+1) > vehicle_capacity:
+            return False
         return True
 
     def _insertion_constrain(self,
@@ -309,7 +311,7 @@ class GreedyInsertionOperator(InsertOperator):
                                                                        demand_type,
                                                                        arrive_time,
                                                                        requestID,
-                                                                       request,
+                                                                       deepcopy(request),
                                                                        route_index):
             self._source_pool = deepcopy(source_pool_temp)
             self._vehicle_customer_match()
@@ -745,9 +747,9 @@ class GreedyInsertionOperator(InsertOperator):
 
 class RegretInsertionOperator(GreedyInsertionOperator):
     def __init__(self,
-                 vehicles: Dict[str, vehicle],
-                 requests: requestPool,
-                 customers: Dict[str, customer],
+                 vehicles: Dict[str, Vehicle],
+                 requests: RequestPool,
+                 customers: Dict[str, Customer],
                  travelCost_solver,
                  degree=2):
         self._vehicles = deepcopy(vehicles)

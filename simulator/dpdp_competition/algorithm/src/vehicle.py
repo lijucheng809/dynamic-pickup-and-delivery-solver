@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 import time
 import os
 
-from simulator.dpdp_competition.algorithm.src.customer import customer
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import customer_request_combination, \
+from simulator.dpdp_competition.algorithm.src.customer import Customer
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
+from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, \
     feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.conf.configs import configs
 
 
-class vehicle(object):
+class Vehicle(object):
     def __init__(self,
                  vehicleID,
                  capacity,
@@ -77,7 +77,7 @@ class vehicle(object):
         return self._depotID
 
     @property
-    def getCurrentRouteCost(self, travelCost_solver=costDatabase()):
+    def getCurrentRouteCost(self, travelCost_solver=CostDatabase()):
         return self._currentTravelCost
 
     def set_update_time(self, Time):
@@ -139,7 +139,7 @@ class vehicle(object):
         else:
             self._route[0].setRightNode(None)
 
-    def addNode2Route(self, node: customer_request_combination, index: int):
+    def addNode2Route(self, node: CustomerRequestCombination, index: int):
         self._route.insert(index, node)
 
     def deleteFinishServeNodeFromRoute(self):
@@ -157,7 +157,7 @@ class vehicle(object):
         self._status = status
 
     def feasibleInsertion(self,
-                          customers: Dict[str, customer],
+                          customers: Dict[str, Customer],
                           customer_id: str,
                           demand_type: str,
                           vehicleArriveTime: datetime,
@@ -169,14 +169,14 @@ class vehicle(object):
         :return: bool
         """
         brother_customer_id = request[demand_type + "_demand_info"]["brother_customer"]
-        node = customer_request_combination(customer_id,
-                                            requestID,
-                                            demand_type,
-                                            brother_customer_id,
-                                            request[demand_type + "_demand_info"]["volume"],
-                                            request[demand_type + "_demand_info"]["time_window"],
-                                            request[demand_type + "_demand_info"]["process_time"],
-                                            self._vehicleID)
+        node = CustomerRequestCombination(customer_id,
+                                          requestID,
+                                          demand_type,
+                                          brother_customer_id,
+                                          request[demand_type + "_demand_info"]["volume"],
+                                          request[demand_type + "_demand_info"]["time_window"],
+                                          request[demand_type + "_demand_info"]["process_time"],
+                                          self._vehicleID)
         node.setVehicleArriveTime(vehicleArriveTime)
         self.addNode2Route(node, node_index_in_route)
         if node_index_in_route > 0:
@@ -218,14 +218,14 @@ class vehicle(object):
         :return:
         """
         self._status = "busy"
-        depot_node = customer_request_combination(destination_info.customerID,
-                                                  destination_info.requestID,
+        depot_node = CustomerRequestCombination(destination_info.customerID,
+                                                destination_info.requestID,
                                                   "depot",
-                                                  None,
-                                                  destination_info.volume,
-                                                  destination_info.timeWindow,
-                                                  destination_info.processTime,
-                                                  self._vehicleID)
+                                                None,
+                                                destination_info.volume,
+                                                destination_info.timeWindow,
+                                                destination_info.processTime,
+                                                self._vehicleID)
         depot_node.setVehicleArriveTime(destination_info.arriveTime)
         customers[depot_node.customerID].getDispatchedRequestSet[depot_node.requestID] = depot_node
         feasibleRearrangePortAssignmentSchedule(customers, destination_info.customerID, depot_node)
@@ -236,7 +236,7 @@ class vehicle(object):
                       request_id_on_order,
                       ongoing_items_map,
                       requests_items_map,
-                      travelCost_solver=costDatabase()):
+                      travelCost_solver=CostDatabase()):
         time_out_requests = {}
         if os.path.exists(configs.time_out_requests):
             with open(configs.time_out_requests, "r") as f:
@@ -249,26 +249,31 @@ class vehicle(object):
             for item_id in requests_items_map[requestID]["delivery_only"]:
                 volume -= ongoing_items_map[item_id]["demand"]
                 process_time += ongoing_items_map[item_id]["unload_time"]
+                creation_time = ongoing_items_map[item_id]["creation_time"]
+                committed_completion_time = ongoing_items_map[item_id]["committed_completion_time"]
+                creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
+                committed_completion_time = time.strftime("%Y-%m-%d %H:%M:%S",
+                                                          time.localtime(committed_completion_time))
+                creation_time = datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S")
+                committed_completion_time = datetime.strptime(committed_completion_time, "%Y-%m-%d %H:%M:%S")
                 if not time_window_left and not time_window_right:
-                    creation_time = ongoing_items_map[item_id]["creation_time"]
-                    committed_completion_time = ongoing_items_map[item_id]["committed_completion_time"]
-                    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
-                    committed_completion_time = time.strftime("%Y-%m-%d %H:%M:%S",
-                                                              time.localtime(committed_completion_time))
                     time_window_left = creation_time
                     time_window_right = committed_completion_time
                     requestID_temp = requestID[:requestID.index("V")]
                     if requestID_temp in time_out_requests:
                         time_window_right = time_out_requests[requestID_temp]["pickup_demand_info"]["time_window"][1]
+                else:
+                    time_window_left = max(creation_time, time_window_left)
+                    time_window_right = min(committed_completion_time, time_window_right)
             # requestID = requestID + "_ongoing"
-            node = customer_request_combination(customerID,
-                                                requestID,
+            node = CustomerRequestCombination(customerID,
+                                              requestID,
                                                 "delivery",
-                                                None,
-                                                volume,
-                                                [time_window_left, time_window_right],
-                                                process_time,
-                                                self._vehicleID)
+                                              None,
+                                              volume,
+                                              [str(time_window_left), str(time_window_right)],
+                                              process_time,
+                                              self._vehicleID)
             left_node = self._route[len(self._route) - 1]
             travel_cost = travelCost_solver.getTravelCost(left_node.customerID, customerID)
             arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
@@ -285,16 +290,65 @@ class vehicle(object):
                 # assert flag
                 print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
 
+    def force_insertion(self, request, customers, travelCost_solver=CostDatabase()):
+        pickup_customer_id = request["pickup_demand_info"]["customer_id"]
+        delivery_customer_id = request["delivery_demand_info"]["customer_id"]
+        requestID = request["requestID"]
+        process_time = request["pickup_demand_info"]["process_time"]
+        volume = request["pickup_demand_info"]["volume"]
+        time_window_left = request["pickup_demand_info"]["time_window"][0]
+        time_window_right = request["pickup_demand_info"]["time_window"][1]
+        pickup_node = CustomerRequestCombination(pickup_customer_id,
+                                                 requestID,
+                                                   "pickup",
+                                                 None,
+                                                 volume,
+                                                 [time_window_left, time_window_right],
+                                                 process_time,
+                                                 self._vehicleID)
+        left_node = self._route[len(self._route) - 1]
+        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, pickup_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        pickup_node.setVehicleArriveTime(arrive_time)
+        departure_time = arrive_time + timedelta(seconds=1800+process_time)
+        pickup_node.setVehicleDepartureTime(departure_time)
+        left_node.setRightNode(pickup_node)
+        pickup_node.setLeftNode(left_node)
+        self._route.append(pickup_node)
+        delivery_node = CustomerRequestCombination(delivery_customer_id,
+                                                   requestID,
+                                                     "delivery",
+                                                   None,
+                                                   -volume,
+                                                   [time_window_left, time_window_right],
+                                                   process_time,
+                                                   self._vehicleID)
+        left_node = self._route[len(self._route) - 1]
+        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, delivery_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        delivery_node.setVehicleArriveTime(arrive_time)
+        departure_time = arrive_time + timedelta(seconds=1800 + process_time)
+        delivery_node.setVehicleDepartureTime(departure_time)
+        left_node.setRightNode(delivery_node)
+        delivery_node.setLeftNode(left_node)
+        pickup_node.setBrotherNode(delivery_node)
+        delivery_node.setBrotherNode(pickup_node)
+        if pickup_node.requestID not in customers[pickup_node.customerID].getDispatchedRequestSet:
+            customers[pickup_node.customerID].getDispatchedRequestSet[pickup_node.requestID] = pickup_node
+        if delivery_node.requestID not in customers[delivery_node.customerID].getDispatchedRequestSet:
+            customers[delivery_node.customerID].getDispatchedRequestSet[delivery_node.requestID] = delivery_node
+        self._route.append(delivery_node)
+
     def activateVehicle(self, volume=0):
         self._status = 'idle'
-        depot_node = customer_request_combination(self._depotID,
-                                                  0,
+        depot_node = CustomerRequestCombination(self._depotID,
+                                                0,
                                                   "depot",
-                                                  None,
-                                                  volume,
-                                                  None,
-                                                  0,
-                                                  self._vehicleID)
+                                                None,
+                                                volume,
+                                                None,
+                                                0,
+                                                self._vehicleID)
         self._route.append(depot_node)
 
 

@@ -5,10 +5,10 @@ import json
 import pandas as pd
 import numpy as np
 
-from simulator.dpdp_competition.algorithm.src.travelCost import costDatabase
+from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 
 
-class customer_request_combination(object):
+class CustomerRequestCombination(object):
     def __init__(self,
                  customerID,
                  requestID,
@@ -63,7 +63,7 @@ class customer_request_combination(object):
         self.startProcessTime = time
 
 
-class sourcePool(object):
+class SourcePool(object):
     def __init__(self, vehicles, customers, requests):
         self.vehicles = vehicles
         self.customers = customers
@@ -88,7 +88,7 @@ class DateEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-class fileProcessor(object):
+class FileProcessor(object):
 
     @staticmethod
     def orders_csv_2_json(input_file: str, output_file: str):
@@ -184,7 +184,7 @@ class fileProcessor(object):
 
 def feasibleRearrangePortAssignmentSchedule(customers: dict,
                                             customerID: str,
-                                            node: customer_request_combination,
+                                            node: CustomerRequestCombination,
                                             tp="repair") -> bool:
     # print("递归开始")
     if node.requestID not in customers[customerID].getDispatchedRequestSet:
@@ -212,7 +212,7 @@ def checker(vehicles):
                     flag = False
                 if index < route_length-1:
                     right_node_arrive_time = node.vehicleDepartureTime \
-                                             + timedelta(seconds=costDatabase().getTravelCost(node.customerID,
+                                             + timedelta(seconds=CostDatabase().getTravelCost(node.customerID,
                                                                                               node.rightNode.customerID)["travel_time"])
                     # if right_node_arrive_time != node.rightNode.vehicleArriveTime:
                     #     print("到达时间有问题！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
@@ -224,14 +224,14 @@ def checker(vehicles):
     return flag
 
 
-class checks(object):
+class Checks(object):
 
     @staticmethod
     def print_solution(vehicles):
 
         for vehicleID in vehicles:
             if len(vehicles[vehicleID].getCurrentRoute) > 1:
-                vehicles[vehicleID].updateTravelCost(costDatabase())
+                vehicles[vehicleID].updateTravelCost(CostDatabase())
                 for index, node in enumerate(vehicles[vehicleID].getCurrentRoute):
                     if index == 0:
                         print("vehicleID: ", vehicleID,
@@ -239,7 +239,7 @@ class checks(object):
                               "     arrive_time:", node.vehicleArriveTime,
                               "     leave_time:", node.vehicleDepartureTime)
                     else:
-                        dis = costDatabase().getTravelCost(
+                        dis = CostDatabase().getTravelCost(
                             vehicles[
                                 vehicleID].getCurrentRoute[
                                 index - 1].customerID,

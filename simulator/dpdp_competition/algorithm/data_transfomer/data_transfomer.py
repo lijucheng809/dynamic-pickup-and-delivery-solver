@@ -12,51 +12,67 @@ def __gen_kid_request(requestID, request, items_map, request_item_map, spilt_num
     q_box_split_num = len(request_item_map["q_box"]) // spilt_num
     kid_requests = {}
     kid_request_item_map = {}
-    kid_q_standard_num_list, kid_q_small_num_list, kid_q_box_num_list = [0] * spilt_num, [0] * spilt_num, [
-        0] * spilt_num
+    kid_q_standard_num_list, kid_q_small_num_list, kid_q_box_num_list = [0.] * spilt_num, [0.] * spilt_num, [
+        0.] * spilt_num
     for i in range(spilt_num):
         if i < spilt_num - 1:
             kid_q_standard_num_list[i] = q_standard_split_num
             kid_q_small_num_list[i] = q_small_split_num
             kid_q_box_num_list[i] = q_box_split_num
         else:
-            kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
-            kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
-            kid_q_box_num_list[i] = len(request_item_map["q_box"]) - (spilt_num-1) * q_box_split_num
+            if q_standard_split_num != 0:
+                kid_q_standard_num_list[i] = len(request_item_map["q_standard"]) - (spilt_num-1) * q_standard_split_num
+            if q_small_split_num != 0:
+                kid_q_small_num_list[i] = len(request_item_map["q_small"]) - (spilt_num-1) * q_small_split_num
+            if q_box_split_num != 0:
+                kid_q_box_num_list[i] = len(request_item_map["q_box"]) - (spilt_num-1) * q_box_split_num
     for i in range(spilt_num):
         kid_requestID = requestID + "-{}".format(i + 1)
         kid_requests[kid_requestID] = deepcopy(request)
         kid_requests[kid_requestID]["pallets"]["q_standard"] = kid_q_standard_num_list[i]
-        kid_requests[kid_requestID]["pallets"]["q_small"] = kid_q_small_num_list[i]
-        kid_requests[kid_requestID]["pallets"]["q_box"] = kid_q_box_num_list[i]
+        kid_requests[kid_requestID]["pallets"]["q_small"] = 0.5 * kid_q_small_num_list[i]
+        kid_requests[kid_requestID]["pallets"]["q_box"] = 0.25 * kid_q_box_num_list[i]
         process_time = 0
         if i < spilt_num - 1:
-            q_standard_items_id = [] if not request_item_map["q_standard"] else request_item_map["q_standard"][
-                                                                                i * q_standard_split_num:(
-                                                                                                                 i + 1) * q_standard_split_num]
-            q_small_items_id = [] if not request_item_map["q_small"] else request_item_map["q_small"][
-                                                                          i * q_small_split_num:(
-                                                                                                        i + 1) * q_small_split_num]
-            q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
-                                                                      i * q_box_split_num:(i + 1) * q_box_split_num]
+            if request_item_map["q_standard"] and q_standard_split_num != 0:
+                q_standard_items_id = request_item_map["q_standard"][i*q_standard_split_num:(i+1)*q_standard_split_num]
+            else:
+                q_standard_items_id = []
+            if request_item_map["q_small"] and q_small_split_num != 0:
+                q_small_items_id = request_item_map["q_small"][i*q_small_split_num:(i+1)*q_small_split_num]
+            else:
+                q_small_items_id = []
+            if request_item_map["q_box"] and q_box_split_num != 0:
+                q_box_items_id = request_item_map["q_box"][i*q_box_split_num:(i+1)*q_box_split_num]
+            else:
+                q_box_items_id = []
             if i == 0:
                 if q_standard_split_num == 0 and request_item_map["q_standard"]:
                     q_standard_items_id = request_item_map["q_standard"]
+                    kid_requests[kid_requestID]["pallets"]["q_standard"] += len(request_item_map["q_standard"])
                 if q_small_split_num == 0 and request_item_map["q_small"]:
                     q_small_items_id = request_item_map["q_small"]
+                    kid_requests[kid_requestID]["pallets"]["q_small"] += 0.5 * len(request_item_map["q_small"])
                 if q_box_split_num == 0 and request_item_map["q_box"]:
                     q_box_items_id = request_item_map["q_box"]
+                    kid_requests[kid_requestID]["pallets"]["q_box"] += 0.25 * len(request_item_map["q_box"])
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
                                                    "q_small": q_small_items_id,
                                                    "q_box": q_box_items_id}
 
         else:
-            q_standard_items_id = [] if not request_item_map["q_standard"] else request_item_map["q_standard"][
-                                                                                (spilt_num - 1) * q_standard_split_num:]
-            q_small_items_id = [] if not request_item_map["q_small"] else request_item_map["q_small"][
-                                                                          (spilt_num - 1) * q_small_split_num:]
-            q_box_items_id = [] if not request_item_map["q_box"] else request_item_map["q_box"][
-                                                                      (spilt_num - 1) * q_box_split_num:]
+            if request_item_map["q_standard"] and q_standard_split_num != 0:
+                q_standard_items_id = request_item_map["q_standard"][(spilt_num-1)*q_standard_split_num:]
+            else:
+                q_standard_items_id = []
+            if request_item_map["q_small"] and q_small_split_num != 0:
+                q_small_items_id = request_item_map["q_small"][(spilt_num-1)*q_small_split_num:]
+            else:
+                q_small_items_id = []
+            if request_item_map["q_box"] and q_box_split_num != 0:
+                q_box_items_id = request_item_map["q_box"][(spilt_num-1)*q_box_split_num:]
+            else:
+                q_box_items_id = []
             kid_request_item_map[kid_requestID] = {"q_standard": q_standard_items_id,
                                                    "q_small": q_small_items_id,
                                                    "q_box": q_box_items_id}
@@ -160,7 +176,7 @@ def __reset_destination(vehicles_info_map, vehicleID, customers, destination, de
     destination[vehicleID]["pickup_item_list"] = []
 
 
-def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info_map, ongoing_items_map):
+def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info_map, old_requests_map):
     vehicle_route = {}
     destination = {}
     vehicleIDs = []
@@ -185,7 +201,6 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                     rk += 1
                 factory_id = route[left].customerID
                 lng, lat = customers[factory_id].getPosition[0], customers[factory_id].getPosition[1]
-                # TODO 时间戳格式记得要转换
                 arrive_time = route[left].vehicleArriveTime
                 leave_time = route[left].vehicleDepartureTime
                 arrive_time, leave_time = __gen_time_stamp(arrive_time, leave_time, update_time)
@@ -194,16 +209,27 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                 for i in range(left, rk + 1):
                     node = route[i]
                     requestID = node.requestID
-                    items = requests_items_map[requestID]
-                    if node.demandType == "pickup":
-                        pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
-                    else:
-                        # TODO 需要加一个if判断delivery_only的出现的情况
-                        if "delivery_only" in items:
-                            delivery_item_list += items["delivery_only"][::-1]
+                    if requestID not in old_requests_map:
+                        items = requests_items_map[requestID]
+                        if node.demandType == "pickup":
+                            pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
                         else:
-                            total_items = items["q_standard"] + items["q_small"] + items["q_box"]
-                            delivery_item_list += total_items[::-1]
+                            if "delivery_only" in items:
+                                delivery_item_list += items["delivery_only"][::-1]
+                            else:
+                                total_items = items["q_standard"] + items["q_small"] + items["q_box"]
+                                delivery_item_list += total_items[::-1]
+                    else:
+                        if node.demandType == "pickup":
+                            for old_request_id in old_requests_map[requestID]:
+                                items = requests_items_map[old_request_id]
+                                pickup_item_list += items["q_standard"] + items["q_small"] + items["q_box"]
+                        else:
+                            for old_request_id in old_requests_map[requestID][::-1]:
+                                items = requests_items_map[old_request_id]
+                                total_items = items["q_standard"] + items["q_small"] + items["q_box"]
+                                delivery_item_list += total_items[::-1]
+                            # delivery_item_list = delivery_item_list[::-1]
                 customer_info = {"factory_id": factory_id,
                                  "lng": lng,
                                  "lat": lat,

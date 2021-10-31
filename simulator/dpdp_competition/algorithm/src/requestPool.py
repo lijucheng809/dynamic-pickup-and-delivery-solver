@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 
-class requestPool(object):
+class RequestPool(object):
     def __init__(self):
         """
         是否需要对requests按紧急程度进行排序？
