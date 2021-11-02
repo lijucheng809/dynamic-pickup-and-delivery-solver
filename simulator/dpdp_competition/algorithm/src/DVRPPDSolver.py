@@ -14,15 +14,15 @@ from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator
 from simulator.dpdp_competition.algorithm.src.ALNS import AdaptiveLargeNeighborhoodSearch
 from simulator.dpdp_competition.algorithm.src.utlis import checker, DateEncoder
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
-class DVRPPD_Solver(object):
+class DVRPPDSolver(object):
     def __init__(self, old_request_map: dict):
         self._vehiclesPool = dict()
         self._requestsPool = RequestPool()
         self._customersPool = dict()
-        self.weighted_objective = configs.weighted_objective_function
+        self.weighted_objective = Configs.weighted_objective_function
         self.objective_score = np.infty
         self._travelCost_solver = CostDatabase()
         self._fail_insertion_list = {}
@@ -110,8 +110,8 @@ class DVRPPD_Solver(object):
         pass
 
     def _gen_time_out_requests_json(self, time_out_requests):
-        if os.path.exists(configs.time_out_requests):
-            with open(configs.time_out_requests, "r") as f:
+        if os.path.exists(Configs.time_out_requests):
+            with open(Configs.time_out_requests, "r") as f:
                 time_out_requests_old = json.load(f)
             for requestID in time_out_requests:
                 if requestID in self._old_request_map:
@@ -124,7 +124,7 @@ class DVRPPD_Solver(object):
                         time_out_requests_old[request_id_temp]["requestID"] = request_id_temp
                 else:
                     time_out_requests_old[requestID] = time_out_requests[requestID]
-            with open(configs.time_out_requests, "w") as f:
+            with open(Configs.time_out_requests, "w") as f:
                 json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
         else:
             time_out_requests_old = {}
@@ -139,7 +139,7 @@ class DVRPPD_Solver(object):
                         time_out_requests_old[request_id_temp]["requestID"] = request_id_temp
                 else:
                     time_out_requests_old[requestID] = time_out_requests[requestID]
-            with open(configs.time_out_requests, "w") as f:
+            with open(Configs.time_out_requests, "w") as f:
                 json.dump(time_out_requests_old, f, cls=DateEncoder, indent=4)
 
     def _insertion_idle_vehicle(self):
@@ -185,7 +185,7 @@ class DVRPPD_Solver(object):
                     null_vehicles.remove(best_insertion_vehicle)
 
     def constructEngine(self,
-                        time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+                        time2Go=datetime.strptime(Configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                         CPU_limit=10.):
         """
         所有requests都要得到分配，并且所有route要满足时间窗，载重等约束条件
@@ -239,7 +239,7 @@ class DVRPPD_Solver(object):
                 self._insertion_idle_vehicle()
             self._print_solution()
 
-    def heuristicEngine(self, time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+    def heuristicEngine(self, time2Go=datetime.strptime(Configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                         CPU_limit=10,
                         mission="improvement"):
         heuristicSolver = AdaptiveLargeNeighborhoodSearch(self._vehiclesPool,

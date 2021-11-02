@@ -13,10 +13,10 @@ from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, SourcePool, Checks
 from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
 from simulator.dpdp_competition.algorithm.src.customer import Customer
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
-class insertOperator(metaclass=ABCMeta):
+class InsertOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def insert(self):
@@ -27,21 +27,21 @@ class insertOperator(metaclass=ABCMeta):
         pass
 
 
-class removeOperator(metaclass=ABCMeta):
+class RemoveOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def remove(self, remove_number: int):
         pass
 
 
-class localSearchOperator(metaclass=ABCMeta):
+class LocalSearchOperator(metaclass=ABCMeta):
 
     @abstractmethod
     def move(self):
         pass
 
 
-class ShawRemovalOperator(removeOperator):
+class ShawRemovalOperator(RemoveOperator):
     def __init__(self, vehicles: Dict[str, Vehicle]):
         self._vehicles = vehicles
         # 对到达时间和货量进行normalized
@@ -49,7 +49,7 @@ class ShawRemovalOperator(removeOperator):
         max_arriveTime = -np.infty
         min_volume = np.infty
         max_volume = -np.infty
-        startTime = datetime.strptime(configs.date + " " + configs.time, "%Y-%m-%d %H:%M:%S")
+        startTime = datetime.strptime(Configs.date + " " + Configs.time, "%Y-%m-%d %H:%M:%S")
         for vehicleID in self._vehicles:
             if len(self._vehicles[vehicleID].getCurrentRoute) > 1:
                 for i in range(1, len(self._vehicles[vehicleID].getCurrentRoute)):
@@ -91,9 +91,9 @@ class ShawRemovalOperator(removeOperator):
                                     - request_2.brotherNode.vehicleArriveTime_normal)
         diff_volume_p1_p2 = abs(request_1.volume_normal - request_2.volume_normal)
 
-        distance_weight = configs.shaw_removal_distance_weight
-        travelTime_weight = configs.shaw_removal_travel_time_weight
-        demand_weight = configs.shaw_removal_demand_weight
+        distance_weight = Configs.shaw_removal_distance_weight
+        travelTime_weight = Configs.shaw_removal_travel_time_weight
+        demand_weight = Configs.shaw_removal_demand_weight
         R = distance_weight * (distance_d1_d2 + distance_p1_p2) \
             + travelTime_weight * (diff_arriveTime_d1_d2 + diff_arriveTime_p1_p2) \
             + demand_weight * diff_volume_p1_p2
@@ -128,7 +128,7 @@ class ShawRemovalOperator(removeOperator):
                 node_R_map[node2] = R
             node_R_map = sorted(node_R_map.items(), key=lambda x: x[1], reverse=False)
             random_index = int(
-                np.power(np.random.rand(), configs.shaw_removal_randomness_value) * (len(node_R_map) - 1))
+                np.power(np.random.rand(), Configs.shaw_removal_randomness_value) * (len(node_R_map) - 1))
             node_new = node_R_map[random_index][0]
             removals[node_new] = unSelectNodes[node_new]
             unSelectNodes.pop(node_new)
@@ -148,7 +148,7 @@ class RandomRemovalOperator(ShawRemovalOperator):
         return removals
 
 
-class WorstRemovalOperator(removeOperator):
+class WorstRemovalOperator(RemoveOperator):
     def __init__(self, vehicles: Dict[str, Vehicle], travelCost_solver=CostDatabase()):
         self._initVehicles = vehicles
         self._vehicles = deepcopy(vehicles)
@@ -199,7 +199,7 @@ class WorstRemovalOperator(removeOperator):
                     continue
             node_cost_map = sorted(node_cost_map.items(), key=lambda x: x[1], reverse=True)
             random_index = int(
-                np.power(np.random.rand(), configs.worst_removal_randomness_value) * (len(node_cost_map) - 1))
+                np.power(np.random.rand(), Configs.worst_removal_randomness_value) * (len(node_cost_map) - 1))
             node_new = node_cost_map[random_index][0]
             indexes = self._pickupNodeIndex[node_new]
             node_new1 = self._initVehicles[indexes["vehicle"]].getCurrentRoute[indexes["routeIndex"]]
@@ -211,7 +211,7 @@ class WorstRemovalOperator(removeOperator):
         return removals
 
 
-class GreedyInsertionOperator(insertOperator):
+class GreedyInsertionOperator(InsertOperator):
     def __init__(self,
                  vehicles: Dict[str, Vehicle],
                  requests: RequestPool,
@@ -273,18 +273,13 @@ class GreedyInsertionOperator(insertOperator):
         arrive_customer_time = pre_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
         leave_customer_time = arrive_customer_time + timedelta(seconds=request[demand_info]["process_time"])
         if pre_node.customerID != target_customer_id:
-            leave_customer_time += timedelta(seconds=configs.static_process_time_on_customer)
-        flag = True
+            leave_customer_time += timedelta(seconds=Configs.static_process_time_on_customer)
+        is_feasible = True
         if arrive_customer_time < order_creation_time:
-            flag = False
+            is_feasible = False
         if leave_customer_time > latest_leave_time:
-            # print("requestID is:", request["requestID"],
-            #       " leave_customer_time:", leave_customer_time,
-            #       " latest_leave_time:", latest_leave_time,
-            #       "demand_type", demand_type,
-            #       "vehicleID:", pre_node.vehicleID)
-            flag = False
-        return {"feasible": flag, "arrive_customer_time": arrive_customer_time, "travel_cost": travel_cost}
+            is_feasible = False
+        return {"feasible": is_feasible, "arrive_customer_time": arrive_customer_time, "travel_cost": travel_cost}
 
     def _capacity_constrain(self, request, vehicleID, route_index):
         route_length = len(self._source_pool.vehicles[vehicleID].getCurrentRoute)
@@ -547,7 +542,7 @@ class GreedyInsertionOperator(insertOperator):
         return insertion_score_dict
 
     def insert(self,
-               time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               time2Go=datetime.strptime(Configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                tp="constructor",
                start_run_time=time.time(),
                CPU_limit=10) -> bool:
@@ -573,22 +568,22 @@ class GreedyInsertionOperator(insertOperator):
                     continue
                 if len(self._source_pool.vehicles[vehicleID].getCurrentRoute) == 1:  # 安排一辆空闲的车
                     """车辆从起始点出发"""
-                    depotNode = self._source_pool.vehicles[vehicleID].getCurrentRoute[0]
-                    if depotNode.requestID == 0 and not depotNode.vehicleArriveTime:
+                    depot_node = self._source_pool.vehicles[vehicleID].getCurrentRoute[0]
+                    if depot_node.requestID == 0 and not depot_node.vehicleArriveTime:
                         self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleArriveTime(time2Go)
                         self._source_pool.vehicles[vehicleID].getCurrentRoute[0].setVehicleDepartureTime(time2Go)
-                    depotID = self._source_pool.vehicles[vehicleID].getDepotID
-                    travel_cost_depot2pickup = self._travelCost_solver.getTravelCost(depotID, pickup_customer_id)
+                    depot_id = self._source_pool.vehicles[vehicleID].getDepotID
+                    travel_cost_depot_2_pickup = self._travelCost_solver.getTravelCost(depot_id, pickup_customer_id)
                     travel_cost_pickup2delivery = self._travelCost_solver.getTravelCost(pickup_customer_id,
                                                                                         delivery_customer_id)
-                    pickup_tw_constrain = self._time_window_constrain(depotNode,
+                    pickup_tw_constrain = self._time_window_constrain(depot_node,
                                                                       pickup_customer_id,
                                                                       "pickup",
                                                                       request)
                     if not pickup_tw_constrain["feasible"]:
                         continue
 
-                    c11 = travel_cost_depot2pickup["distance"] + travel_cost_pickup2delivery["distance"]
+                    c11 = travel_cost_depot_2_pickup["distance"] + travel_cost_pickup2delivery["distance"]
                     c11 += self._get_current_mileage(source_pool_temp.vehicles)
                     if best_score < c11:
                         continue
@@ -764,7 +759,7 @@ class RegretInsertionOperator(GreedyInsertionOperator):
             del candidate_[len(candidate_) - 1]
 
     def insert(self,
-               time2Go=datetime.strptime(configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
+               time2Go=datetime.strptime(Configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),
                tp="constructor") -> bool:
         available_vehicleID_set, unDispatchedRequestsID_set = self._getResource()
         # print(unDispatchedRequestsID_set)

@@ -1,7 +1,7 @@
 import json
 import time
 from datetime import datetime, timedelta
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 from copy import deepcopy
 import os
 
@@ -104,7 +104,7 @@ def __demand_split(big_requests: set, requests: dict, items_map: dict, requests_
 
 
 def __requests_sim_2_algo(vehicle_capacity=15):
-    with open(configs.unallocated_order_items_path) as f:
+    with open(Configs.unallocated_order_items_path) as f:
         orders = json.load(f)
     big_requests = set()
     requests_items_map = {}
@@ -251,12 +251,12 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
         if len(vehicle_route[vehicleID]) > 0:
             if destination[vehicleID]["pickup_item_list"] or destination[vehicleID]["delivery_item_list"]:
                 del vehicle_route[vehicleID][0]
-    with open(configs.output_destination_path, "w") as f:
+    with open(Configs.output_destination_path, "w") as f:
         json.dump(destination, f, indent=4)
-    with open(configs.output_route_path, "w") as f:
+    with open(Configs.output_route_path, "w") as f:
         json.dump(vehicle_route, f, indent=4)
 
-    with open(configs.vehicle_info_path, "r") as f:
+    with open(Configs.vehicle_info_path, "r") as f:
         vehicles_info = json.load(f)
     flag = True
     for vehicle_info in vehicles_info:
@@ -265,8 +265,8 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
             break
     vehicle_start_end_pair = {}
     if flag:
-        if os.path.exists(configs.time_out_requests):
-            os.remove(configs.time_out_requests)
+        if os.path.exists(Configs.time_out_requests):
+            os.remove(Configs.time_out_requests)
         for vehicle_info in vehicles_info:
             start_pos = vehicle_info["cur_factory_id"]
             if destination[vehicle_info["id"]]:
@@ -275,7 +275,7 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                 end_pos = start_pos
             vehicle_start_end_pair[vehicle_info["id"]] = {"start": start_pos, "end": end_pos}
     else:
-        with open(configs.middle_vehicle_info_path, "r") as f:
+        with open(Configs.middle_vehicle_info_path, "r") as f:
             middle_vehicles_info = json.load(f)
         for vehicle_info in vehicles_info:
             vehicleID = vehicle_info["id"]
@@ -289,7 +289,7 @@ def __solution_algo_2_sim(vehicles, customers, requests_items_map, vehicles_info
                 end_pos = start_pos
             vehicle_start_end_pair[vehicle_info["id"]] = {"start": start_pos, "end": end_pos}
 
-    with open(configs.middle_vehicle_info_path, "w") as f:
+    with open(Configs.middle_vehicle_info_path, "w") as f:
         json.dump(vehicle_start_end_pair, f, indent=4)
 
 

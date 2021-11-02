@@ -7,11 +7,11 @@ from copy import deepcopy
 import math
 
 from simulator.dpdp_competition.algorithm.src.customer import Customer
-from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPD_Solver
+from simulator.dpdp_competition.algorithm.src.DVRPPDSolver import DVRPPDSolver
 from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
 from simulator.dpdp_competition.algorithm.data_transfomer import data_transfomer
 from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, \
     feasibleRearrangePortAssignmentSchedule
 from simulator.dpdp_competition.algorithm.src.request_cluster import cluster, ongoing_request_cluster
@@ -216,18 +216,18 @@ def pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoi
 def scheduling():
     start_time = time.time()
     middle_vehicle_info = None
-    with open(configs.customer_info_path, "r") as f:
+    with open(Configs.customer_info_path, "r") as f:
         customer_id_info_map = json.load(f)
-    with open(configs.vehicle_info_path, "r") as f:
+    with open(Configs.vehicle_info_path, "r") as f:
         vehicles_info = json.load(f)
-    with open(configs.ongoing_items_path, "r") as f:
+    with open(Configs.ongoing_items_path, "r") as f:
         ongoing_items = json.load(f)
-    if os.path.exists(configs.middle_vehicle_info_path):
-        with open(configs.middle_vehicle_info_path, "r") as f:
+    if os.path.exists(Configs.middle_vehicle_info_path):
+        with open(Configs.middle_vehicle_info_path, "r") as f:
             middle_vehicle_info = json.load(f)
     time_out_requests = {}
-    if os.path.exists(configs.time_out_requests):
-        with open(configs.time_out_requests, "r") as f:
+    if os.path.exists(Configs.time_out_requests):
+        with open(Configs.time_out_requests, "r") as f:
             time_out_requests = json.load(f)
     ongoing_items_map = {}
     for item in ongoing_items:
@@ -254,7 +254,7 @@ def scheduling():
                         time_out_requests[orderID_new]["delivery_demand_info"]["time_window"][1]
     new_requests, old_requests_map = cluster(deepcopy(request_info["requests"]))
     print(old_requests_map, file=sys.stderr)
-    dvrppd_Solver = DVRPPD_Solver(old_requests_map)
+    dvrppd_Solver = DVRPPDSolver(old_requests_map)
     pushRequests2Solver(dvrppd_Solver, new_requests, customer_id_info_map)
     time_2_go = pushVehicle2Solver(vehicles_info, dvrppd_Solver, customer_id_info_map, ongoing_items_map,
                                    request_info, middle_vehicle_info)
@@ -263,9 +263,9 @@ def scheduling():
         if vehicle_info["destination"]:
             flag = False
             break
-    dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=configs.algo_run_time - 1)  # 构造解
+    dvrppd_Solver.constructEngine(time2Go=time_2_go, CPU_limit=Configs.algo_run_time - 1)  # 构造解
     middle_tim = time.time()
-    left_time_2_heuristic = configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
+    left_time_2_heuristic = Configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5  # 留30秒输出数据
     if len(new_requests) > 10 and left_time_2_heuristic > 3:
         dvrppd_Solver.heuristicEngine(time2Go=time_2_go, CPU_limit=2)
     # dvrppd_Solver.foliumPlot(customer_id_info_map)

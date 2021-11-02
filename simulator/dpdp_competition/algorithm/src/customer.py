@@ -4,7 +4,7 @@ from queue import PriorityQueue
 
 from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
 class Customer(object):
@@ -160,7 +160,7 @@ class Customer(object):
                     break
             if node.demandType != "parking":
                 earliestDepartureTime = node.vehicleArriveTime + timedelta(
-                    seconds=configs.static_process_time_on_customer)
+                    seconds=Configs.static_process_time_on_customer)
             else:
                 earliestDepartureTime = node.vehicleArriveTime
             if batch_node:
@@ -288,7 +288,7 @@ class Customer(object):
 
         earliestDepartureTime = node.vehicleArriveTime + timedelta(seconds=node.processTime)
         if node.leftNode.demandType != "depot" and node.leftNode.customerID == node.customerID:
-            earliestDepartureTime += timedelta(seconds=configs.static_process_time_on_customer)
+            earliestDepartureTime += timedelta(seconds=Configs.static_process_time_on_customer)
 
         # TODO 此处需要在卡位分配模块写好后，删除下面这条代码
         # node.setVehicleDepartureTime(earliestDepartureTime)
