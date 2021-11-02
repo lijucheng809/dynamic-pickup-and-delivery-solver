@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
 def cluster(requests):
@@ -30,7 +30,7 @@ def cluster(requests):
                 max_creation_time = max(creation_time, request_batch[id][request_id]["max_creation_time"])
                 min_tw_right = min(tw_right, request_batch[id][request_id]["min_tw_right"])
                 max_tw_right = max(tw_right, request_batch[id][request_id]["max_tw_right"])
-                if volume + request_batch[id][request_id]["volume"] <= configs.vehicle_capacity and \
+                if volume + request_batch[id][request_id]["volume"] <= Configs.vehicle_capacity and \
                         min_creation_time + timedelta(minutes=120) >= max_creation_time:
                     flag = False
                     request_batch[id][request_id]["old_requestID"].append(requestID)

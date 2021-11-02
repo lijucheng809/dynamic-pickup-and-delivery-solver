@@ -9,36 +9,36 @@ from simulator.dpdp_competition.algorithm.src.customer import Customer
 from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
 from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, \
     feasibleRearrangePortAssignmentSchedule
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
 class Vehicle(object):
     def __init__(self,
-                 vehicleID,
+                 vehicle_id,
                  capacity,
                  position,
                  gps_id,
-                 currentVolume=0,
+                 current_volume=0,
                  status='off_duty',
                  mileage=0):
         """
-        :param vehicleID:
+        :param vehicle_id:
         :param capacity:
         :param position:
         :param route:
             [{"customer", request, "time_window", "arrive_time", "waiting_timespan", "processingTimespan", "departure_time"}, {}, ...]
-        :param currentVolume:
+        :param current_volume:
         :param status: "idle, en_route, serving, off_duty"
         """
-        self._vehicleID = vehicleID
+        self._vehicleID = vehicle_id
         self._capacity = capacity
         self._route = []
         self._depotID = gps_id
-        self._currentVolume = currentVolume
+        self._currentVolume = current_volume
         self._status = status
         self._position = position
         self._finishServedCustomerList = []
-        self._staticServeTimeOnCustomer = configs.static_process_time_on_customer
+        self._staticServeTimeOnCustomer = Configs.static_process_time_on_customer
         self._currentTravelCost = 0
         self._update_time = None
         self._mileage = mileage
@@ -77,31 +77,31 @@ class Vehicle(object):
         return self._depotID
 
     @property
-    def getCurrentRouteCost(self, travelCost_solver=CostDatabase()):
+    def getCurrentRouteCost(self, travel_cost_solver=CostDatabase()):
         return self._currentTravelCost
 
     def set_update_time(self, Time):
         self._update_time = Time
 
-    def updateTravelCost(self, travelCost_solver):
+    def updateTravelCost(self, travel_cost_solver):
         if len(self._route) > 1:
             total_distance = 0
-            total_travelTime = 0
+            total_travel_time = 0
             for index in range(len(self._route) - 1):
                 node1, node2 = self._route[index], self._route[index + 1]
-                travel_cost = travelCost_solver.getTravelCost(node1.customerID, node2.customerID)
+                travel_cost = travel_cost_solver.getTravelCost(node1.customerID, node2.customerID)
                 total_distance += travel_cost["distance"]
-                total_travelTime += travel_cost["travel_time"]
-            weight = configs.weighted_objective_function
-            self._currentTravelCost = weight * total_distance + (1 - weight) * total_travelTime
+                total_travel_time += travel_cost["travel_time"]
+            weight = Configs.weighted_objective_function
+            self._currentTravelCost = weight * total_distance + (1 - weight) * total_travel_time
         else:
             self._currentTravelCost = 0
 
     def getCurrentVolume(self, route_index):
-        currentVolume = 0
+        current_volume = 0
         for i in range(route_index):
-            currentVolume += self._route[i].volume
-        return currentVolume
+            current_volume += self._route[i].volume
+        return current_volume
 
     def underCapacity(self):
         volume = 0
@@ -112,15 +112,15 @@ class Vehicle(object):
                     return False
         return True
 
-    def setPDNodeConnection(self, pickup_routeIndex: int, delivery_routeIndex: int):
+    def setPDNodeConnection(self, pickup_route_index: int, delivery_route_index: int):
         """
         用于后续领域搜索，快速找到PD在路径中的位置
-        :param pickup_routeIndex:
-        :param delivery_routeIndex:
+        :param pickup_route_index:
+        :param delivery_route_index:
         :return:
         """
-        self._route[pickup_routeIndex].setBrotherNodeRouteIndex(delivery_routeIndex)
-        self._route[delivery_routeIndex].setBrotherNodeRouteIndex(pickup_routeIndex)
+        self._route[pickup_route_index].setBrotherNodeRouteIndex(delivery_route_index)
+        self._route[delivery_route_index].setBrotherNodeRouteIndex(pickup_route_index)
 
     def deleteNodeFromRoute(self, pickup_node_index):
         # 应该成对删除， 即同时将Pickup以及delivery删除
@@ -160,8 +160,8 @@ class Vehicle(object):
                           customers: Dict[str, Customer],
                           customer_id: str,
                           demand_type: str,
-                          vehicleArriveTime: datetime,
-                          requestID: str,
+                          vehicle_arrive_time: datetime,
+                          request_id: str,
                           request: dict,
                           node_index_in_route: int) -> bool:
         """
@@ -170,14 +170,14 @@ class Vehicle(object):
         """
         brother_customer_id = request[demand_type + "_demand_info"]["brother_customer"]
         node = CustomerRequestCombination(customer_id,
-                                          requestID,
+                                          request_id,
                                           demand_type,
                                           brother_customer_id,
                                           request[demand_type + "_demand_info"]["volume"],
                                           request[demand_type + "_demand_info"]["time_window"],
                                           request[demand_type + "_demand_info"]["process_time"],
                                           self._vehicleID)
-        node.setVehicleArriveTime(vehicleArriveTime)
+        node.setVehicleArriveTime(vehicle_arrive_time)
         self.addNode2Route(node, node_index_in_route)
         if node_index_in_route > 0:
             self._route[node_index_in_route].setLeftNode(self._route[node_index_in_route - 1])
@@ -185,17 +185,13 @@ class Vehicle(object):
         if node_index_in_route < len(self._route) - 1:
             self._route[node_index_in_route].setRightNode(self._route[node_index_in_route + 1])
             self._route[node_index_in_route + 1].setLeftNode(self._route[node_index_in_route])
-        if requestID not in customers[customer_id].getUnfinishedDemands:
-            customers[customer_id].addNewDemand(requestID, request[demand_type + "_demand_info"])
+        if request_id not in customers[customer_id].getUnfinishedDemands:
+            customers[customer_id].addNewDemand(request_id, request[demand_type + "_demand_info"])
         self.updateVolume(request[demand_type + "_demand_info"]["volume"])
 
         if demand_type == "delivery" and not self.underCapacity():  # 因为PD问题的特殊性，需要在delivery插入后，对载重约束再做一次判断
             return False
 
-        # if customers[customer_id].feasibleReservePort(self, node_index_in_route):
-        #     return True
-        # else:
-        #     pass
         if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
             customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
         assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
@@ -238,8 +234,8 @@ class Vehicle(object):
                       requests_items_map,
                       travelCost_solver=CostDatabase()):
         time_out_requests = {}
-        if os.path.exists(configs.time_out_requests):
-            with open(configs.time_out_requests, "r") as f:
+        if os.path.exists(Configs.time_out_requests):
+            with open(Configs.time_out_requests, "r") as f:
                 time_out_requests = json.load(f)
         while request_id_on_order:
             requestID = request_id_on_order.pop()

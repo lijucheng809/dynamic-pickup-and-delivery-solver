@@ -1,7 +1,7 @@
 import os
 
 
-class configs(object):
+class Configs(object):
     root_folder_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     algorithm_folder_path = os.path.join(root_folder_path, "algorithm")
     algorithm_data_path = os.path.join(algorithm_folder_path, "data")

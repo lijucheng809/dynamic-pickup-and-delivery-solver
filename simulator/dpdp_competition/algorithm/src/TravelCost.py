@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 import json
 from datetime import datetime
 
-from simulator.dpdp_competition.algorithm.conf.configs import configs
+from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
 class TravelCost(metaclass=ABCMeta):
@@ -14,7 +14,7 @@ class TravelCost(metaclass=ABCMeta):
 
 class CostDatabase(TravelCost):
     def __init__(self):
-        with open(configs.route_cost_map_path) as f:
+        with open(Configs.route_cost_map_path) as f:
             self._route_cost_map = json.load(f)
 
     def getTravelCost(self, startPoint, endPoint, inquireTime=datetime.now()):

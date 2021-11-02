@@ -34,32 +34,32 @@ class RequestPool(object):
                 self._unDispatchedRequestPool.pop(key)
 
     def updateDispatchedRequestPool(self,
-                                    requestID: str,
+                                    request_id: str,
                                     index: str,
-                                    requestFinishTime=datetime.now()):
+                                    request_finish_time=datetime.now()):
         """
-        :param requestID:
+        :param request_id:
         :param index: type: str, [add, finish, remove]
-        :param requestFinishTime: type: datetime
+        :param request_finish_time: type: datetime
         :return: None
         """
         if index == "add":
-            self._dispatchedRequestPool[requestID] = self._unDispatchedRequestPool[requestID]
-            self._unDispatchedRequestPool.pop(requestID)
+            self._dispatchedRequestPool[request_id] = self._unDispatchedRequestPool[request_id]
+            self._unDispatchedRequestPool.pop(request_id)
         elif index == "finish":
-            self._dispatchedRequestPool[requestID]["finishTime"] = requestFinishTime
-            self._updateFinishedRequestPool(requestID)
-            self._dispatchedRequestPool.pop(requestID)
+            self._dispatchedRequestPool[request_id]["finishTime"] = request_finish_time
+            self._updateFinishedRequestPool(request_id)
+            self._dispatchedRequestPool.pop(request_id)
         else:
-            self._dispatchedRequestPool.pop(requestID)
+            self._dispatchedRequestPool.pop(request_id)
 
-    def _updateFinishedRequestPool(self, requestID: str):
+    def _updateFinishedRequestPool(self, request_id: str):
         """
         如果request完成，则将完成的request更新至finishedRequestPool中
-        :param requestID: dict
+        :param request_id: dict
         :return: None
         """
-        self._finishedRequestPool[requestID] = self._dispatchedRequestPool[requestID]
+        self._finishedRequestPool[request_id] = self._dispatchedRequestPool[request_id]
 
     def emptyUnDispatchedPool(self):
         if not bool(self._unDispatchedRequestPool):
