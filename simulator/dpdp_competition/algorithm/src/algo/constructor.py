@@ -3,10 +3,10 @@ from copy import deepcopy
 from typing import Dict
 from datetime import datetime
 
-from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
-from simulator.dpdp_competition.algorithm.src.customer import Customer
-from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
-from simulator.dpdp_competition.algorithm.src.Operator import GreedyInsertionOperator, RegretInsertionOperator
+from simulator.dpdp_competition.algorithm.src.common.request_pool import RequestPool
+from simulator.dpdp_competition.algorithm.src.common.customer import Customer
+from simulator.dpdp_competition.algorithm.src.common.vehicle import Vehicle
+from simulator.dpdp_competition.algorithm.src.algo.operator import GreedyInsertionOperator
 from simulator.dpdp_competition.algorithm.conf.configs import Configs
 
 
@@ -25,15 +25,13 @@ class SolomonInsertionHeuristic(Constructor):
     def __init__(self,
                  vehicles: Dict[str, Vehicle],
                  requests: RequestPool,
-                 customers: Dict[str, Customer],
-                 travelCost_Solver):
+                 customers: Dict[str, Customer]):
         self._vehicles = deepcopy(vehicles)
         self._requests = deepcopy(requests)
         self._customers = deepcopy(customers)
         self._insertionOperator = GreedyInsertionOperator(self._vehicles,
                                                           self._requests,
-                                                          self._customers,
-                                                          travelCost_Solver)
+                                                          self._customers)
 
     def solve(self,
               time2Go=datetime.strptime(Configs.date + " 0:0:0", "%Y-%m-%d %H:%M:%S"),

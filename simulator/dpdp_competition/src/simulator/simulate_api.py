@@ -24,10 +24,10 @@ import random
 import time
 import traceback
 
-from src.conf.configs import Configs
-from src.simulator.simulate_environment import SimulateEnvironment
-from src.utils.input_utils import get_initial_data
-from src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.simulator.simulate_environment import SimulateEnvironment
+from simulator.dpdp_competition.src.utils.input_utils import get_initial_data
+from simulator.dpdp_competition.src.utils.logging_engine import logger
 
 
 def __initialize(factory_info_file_name: str, route_info_file_name: str, instance_folder: str):

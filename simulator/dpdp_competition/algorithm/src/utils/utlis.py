@@ -1,84 +1,21 @@
 import random
-from typing import Dict
 from datetime import datetime, timedelta
 import json
 import pandas as pd
 import numpy as np
 
-from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
+from simulator.dpdp_competition.algorithm.src.common.customer_request_combination import CustomerRequestCombination
+from simulator.dpdp_competition.algorithm.src.utils.route_cost_util import route_cost
 
 
-class CustomerRequestCombination(object):
-    def __init__(self,
-                 customerID,
-                 requestID,
-                 demandType,
-                 brother_customerID,
-                 volume,
-                 time_window,
-                 processTime,
-                 vehicleID):
-        self.customerID = customerID
-        self.requestID = requestID
-        self.demandType = demandType
-        self.volume = volume
-        self.brother_customerID = brother_customerID
-        self.timeWindow = time_window
-        self.processTime = processTime
-        self.vehicleID = vehicleID
-        self.vehicleArriveTime = None
-        self.startProcessTime = None
-        self.vehicleDepartureTime = None
-        self.vehicleArriveTime_normal = None
-        self.volume_normal = None
-        self.leftNode = None
-        self.rightNode = None
-        self.brotherNode = None
-
-    def __lt__(self, other):
-        return self.vehicleArriveTime < other.vehicleArriveTime
-
-    def setNormalVolume(self, volume: float):
-        self.volume_normal = volume
-
-    def setNormalArriveTime(self, time: float):
-        self.vehicleArriveTime_normal = time
-
-    def setVehicleArriveTime(self, time):
-        self.vehicleArriveTime = time
-
-    def setVehicleDepartureTime(self, time):
-        self.vehicleDepartureTime = time
-
-    def setLeftNode(self, left_node):
-        self.leftNode = left_node
-
-    def setRightNode(self, right_node):
-        self.rightNode = right_node
-
-    def setBrotherNode(self, node):
-        self.brotherNode = node
-
-    def setStartProcessTime(self, time):
-        self.startProcessTime = time
-
-
-class SourcePool(object):
-    def __init__(self, vehicles, customers, requests):
-        self.vehicles = vehicles
-        self.customers = customers
-        self.requests = requests
-
-
-class destination(object):
-    def __init__(self, customerID, requestID, volume, process_time, arrive_time, time_window):
-        self.customerID = customerID
-        self.requestID = requestID
-        self.volume = volume
-        self.processTime = process_time
-        self.arriveTime = arrive_time
-        self.timeWindow = time_window
-
+# class destination(object):
+#     def __init__(self, customerID, requestID, volume, process_time, arrive_time, time_window):
+#         self.customerID = customerID
+#         self.requestID = requestID
+#         self.volume = volume
+#         self.processTime = process_time
+#         self.arriveTime = arrive_time
+#         self.timeWindow = time_window
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -212,8 +149,8 @@ def checker(vehicles):
                     flag = False
                 if index < route_length-1:
                     right_node_arrive_time = node.vehicleDepartureTime \
-                                             + timedelta(seconds=CostDatabase().getTravelCost(node.customerID,
-                                                                                              node.rightNode.customerID)["travel_time"])
+                                             + timedelta(seconds=route_cost.getTravelCost(node.customerID,
+                                                                                          node.rightNode.customerID)["travel_time"])
                     # if right_node_arrive_time != node.rightNode.vehicleArriveTime:
                     #     print("到达时间有问题！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
                     #     print(right_node_arrive_time, node.rightNode.vehicleArriveTime)
@@ -231,7 +168,7 @@ class Checks(object):
 
         for vehicleID in vehicles:
             if len(vehicles[vehicleID].getCurrentRoute) > 1:
-                vehicles[vehicleID].updateTravelCost(CostDatabase())
+                vehicles[vehicleID].updateTravelCost()
                 for index, node in enumerate(vehicles[vehicleID].getCurrentRoute):
                     if index == 0:
                         print("vehicleID: ", vehicleID,
@@ -239,7 +176,7 @@ class Checks(object):
                               "     arrive_time:", node.vehicleArriveTime,
                               "     leave_time:", node.vehicleDepartureTime)
                     else:
-                        dis = CostDatabase().getTravelCost(
+                        dis = route_cost.getTravelCost(
                             vehicles[
                                 vehicleID].getCurrentRoute[
                                 index - 1].customerID,

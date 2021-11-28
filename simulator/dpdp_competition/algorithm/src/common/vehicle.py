@@ -1,26 +1,26 @@
 import json
 import sys
-from typing import List, Dict
+from typing import Dict
 from datetime import datetime, timedelta
 import time
 import os
 
-from simulator.dpdp_competition.algorithm.src.customer import Customer
-from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination, \
-    feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.src.common.customer import Customer
+from simulator.dpdp_competition.algorithm.src.utils.utlis import feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.src.common.customer_request_combination import CustomerRequestCombination
 from simulator.dpdp_competition.algorithm.conf.configs import Configs
+from simulator.dpdp_competition.algorithm.src.enum.constrain_enum import ConstrainEnum
+from simulator.dpdp_competition.algorithm.src.utils.route_cost_util import route_cost
+from simulator.dpdp_competition.algorithm.src.enum.demand_type_enum import DemandTypeEnum
+from simulator.dpdp_competition.algorithm.src.enum.request_info_enum import RequestInfoEnum
+from simulator.dpdp_competition.algorithm.src.enum.item_info_enum import ItemInfoEnum
+from simulator.dpdp_competition.algorithm.src.enum.route_cost_enum import RouteCostEnum
+from simulator.dpdp_competition.algorithm.src.enum.demand_info_enum import DemandInfoEnum
 
 
 class Vehicle(object):
-    def __init__(self,
-                 vehicle_id,
-                 capacity,
-                 position,
-                 gps_id,
-                 current_volume=0,
-                 status='off_duty',
-                 mileage=0):
+    def __init__(self, vehicle_id, capacity, position, gps_id, current_volume=0, status='off_duty', mileage=0,
+                 dimension=None, type="A"):
         """
         :param vehicle_id:
         :param capacity:
@@ -42,7 +42,23 @@ class Vehicle(object):
         self._currentTravelCost = 0
         self._update_time = None
         self._mileage = mileage
-        # self._travelCost_solver = costDatabase()
+        self._dimension = dimension  # 箱规尺寸
+        self._type = type
+        self._compatible_item_type_list = None  # 与车辆兼容的货物类型列表
+        self._delivery_only_id_bin_map = {}
+        self._incompatible_item_type_set = set()  # 车上装在的货物中互斥的货物类型集合， 仅存放delivery_only的货物
+
+    @property
+    def get_incompatible_item_type_set(self):
+        return self._incompatible_item_type_set
+
+    @property
+    def get_delivery_only_id_bin_map(self):
+        return self._delivery_only_id_bin_map
+
+    @property
+    def get_compatible_item_type_list(self):
+        return self._compatible_item_type_list
 
     @property
     def getMileage(self):
@@ -77,21 +93,31 @@ class Vehicle(object):
         return self._depotID
 
     @property
-    def getCurrentRouteCost(self, travel_cost_solver=CostDatabase()):
+    def getCurrentRouteCost(self):
         return self._currentTravelCost
+
+    @property
+    def get_vehicle_dimension(self):
+        return self._dimension
+
+    def set_compatible_items(self, compatible_item_type_list: list):
+        self._compatible_item_type_list = compatible_item_type_list
+
+    def set_vehicle_dimension(self, vehicle_dimension):
+        self._dimension = vehicle_dimension
 
     def set_update_time(self, Time):
         self._update_time = Time
 
-    def updateTravelCost(self, travel_cost_solver):
+    def updateTravelCost(self):
         if len(self._route) > 1:
             total_distance = 0
             total_travel_time = 0
             for index in range(len(self._route) - 1):
                 node1, node2 = self._route[index], self._route[index + 1]
-                travel_cost = travel_cost_solver.getTravelCost(node1.customerID, node2.customerID)
-                total_distance += travel_cost["distance"]
-                total_travel_time += travel_cost["travel_time"]
+                travel_cost = route_cost.getTravelCost(node1.customerID, node2.customerID)
+                total_distance += travel_cost[RouteCostEnum.distance.name]
+                total_travel_time += travel_cost[RouteCostEnum.travel_time.name]
             weight = Configs.weighted_objective_function
             self._currentTravelCost = weight * total_distance + (1 - weight) * total_travel_time
         else:
@@ -161,21 +187,20 @@ class Vehicle(object):
                           customer_id: str,
                           demand_type: str,
                           vehicle_arrive_time: datetime,
-                          request_id: str,
                           request: dict,
                           node_index_in_route: int) -> bool:
         """
         可能需要递归，因为每次新插入需求会影响很多站点的卡位分配情况
         :return: bool
         """
-        brother_customer_id = request[demand_type + "_demand_info"]["brother_customer"]
+        brother_customer_id = request[demand_type + "_demand_info"][DemandInfoEnum.brother_customer.name]
         node = CustomerRequestCombination(customer_id,
-                                          request_id,
+                                          request[RequestInfoEnum.requestID.name],
                                           demand_type,
                                           brother_customer_id,
-                                          request[demand_type + "_demand_info"]["volume"],
-                                          request[demand_type + "_demand_info"]["time_window"],
-                                          request[demand_type + "_demand_info"]["process_time"],
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.volume.name],
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.time_window.name],
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.process_time.name],
                                           self._vehicleID)
         node.setVehicleArriveTime(vehicle_arrive_time)
         self.addNode2Route(node, node_index_in_route)
@@ -185,28 +210,62 @@ class Vehicle(object):
         if node_index_in_route < len(self._route) - 1:
             self._route[node_index_in_route].setRightNode(self._route[node_index_in_route + 1])
             self._route[node_index_in_route + 1].setLeftNode(self._route[node_index_in_route])
-        if request_id not in customers[customer_id].getUnfinishedDemands:
-            customers[customer_id].addNewDemand(request_id, request[demand_type + "_demand_info"])
-        self.updateVolume(request[demand_type + "_demand_info"]["volume"])
+        if request[RequestInfoEnum.requestID.name] not in customers[customer_id].getUnfinishedDemands:
+            customers[customer_id].addNewDemand(request[RequestInfoEnum.requestID.name], request[demand_type + "_demand_info"])
+        self.updateVolume(request[demand_type + "_demand_info"][DemandInfoEnum.volume.name])
 
-        if demand_type == "delivery" and not self.underCapacity():  # 因为PD问题的特殊性，需要在delivery插入后，对载重约束再做一次判断
+        if demand_type == DemandTypeEnum.delivery.name and not self.underCapacity():  # 因为PD问题的特殊性，需要在delivery插入后，对载重约束再做一次判断
             return False
 
         if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
             customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
         assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
-        flag = feasibleRearrangePortAssignmentSchedule(customers, customer_id, node)
-        if flag:
-            vehicle_node = self._route[node_index_in_route]
-            vehicle_left_node = vehicle_node.leftNode
-            customer_left_node = customers[vehicle_node.customerID].getDispatchedRequestSet[
-                vehicle_node.requestID].leftNode
-            assert vehicle_left_node == customer_left_node
-            if vehicle_left_node != customer_left_node:
+        if Configs.constrains[ConstrainEnum.port_resource]:
+            flag = feasibleRearrangePortAssignmentSchedule(customers, customer_id, node)
+            if flag:
+                vehicle_node = self._route[node_index_in_route]
+                vehicle_left_node = vehicle_node.leftNode
+                customer_left_node = customers[vehicle_node.customerID].getDispatchedRequestSet[
+                    vehicle_node.requestID].leftNode
+                assert vehicle_left_node == customer_left_node
+                if vehicle_left_node != customer_left_node:
+                    return False
+                return True
+            else:
                 return False
-            return True
         else:
-            return False
+            # todo 更新后续节点的到达和离开时间
+            leave_time = vehicle_arrive_time + timedelta(seconds=Configs.static_process_time_on_customer +
+                                                                 node.processTime)
+            node.setVehicleDepartureTime(leave_time)
+            if node_index_in_route < len(self._route) - 1:
+                duration = route_cost.getTravelCost(node.customerID,
+                                                    self._route[node_index_in_route + 1].customerID)[RouteCostEnum.travel_time.name]
+                new_arrive_time = leave_time+timedelta(seconds=duration)
+                is_advance_arrive = True
+                if new_arrive_time > self._route[node_index_in_route+1].vehicleArriveTime:
+                    time_delta = (new_arrive_time-self._route[node_index_in_route+1].vehicleArriveTime).seconds
+                else:
+                    is_advance_arrive = False
+                    time_delta = (self._route[node_index_in_route+1].vehicleArriveTime - new_arrive_time).seconds
+                for i in range(node_index_in_route+1, len(self._route)):
+                    if is_advance_arrive:
+                        self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime - timedelta(seconds=time_delta)
+                        self._route[i].vehicleDepartureTime = self._route[i].vehicleArriveTime - timedelta(
+                            seconds=time_delta)
+                    else:
+                        if self._route[i].vehicleDepartureTime + timedelta(seconds=time_delta) \
+                                > datetime.strptime(self._route[i].timeWindow[1], "%Y-%m-%d %H:%M:%S"):
+                            return False
+                        else:
+                            self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime + timedelta(
+                                seconds=time_delta)
+                            self._route[i].vehicleDepartureTime = self._route[i].vehicleArriveTime + timedelta(
+                                seconds=time_delta)
+                return True
+
+            else:
+                return True
 
     def resetDepot(self, destination_info, customers):
         """
@@ -216,7 +275,7 @@ class Vehicle(object):
         self._status = "busy"
         depot_node = CustomerRequestCombination(destination_info.customerID,
                                                 destination_info.requestID,
-                                                  "depot",
+                                                "depot",
                                                 None,
                                                 destination_info.volume,
                                                 destination_info.timeWindow,
@@ -224,29 +283,35 @@ class Vehicle(object):
                                                 self._vehicleID)
         depot_node.setVehicleArriveTime(destination_info.arriveTime)
         customers[depot_node.customerID].getDispatchedRequestSet[depot_node.requestID] = depot_node
-        feasibleRearrangePortAssignmentSchedule(customers, destination_info.customerID, depot_node)
+        if Configs.constrains[ConstrainEnum.port_resource]:
+            feasibleRearrangePortAssignmentSchedule(customers, destination_info.customerID, depot_node)
         self._route.append(depot_node)
 
     def gen_fix_route(self,
                       customers,
                       request_id_on_order,
                       ongoing_items_map,
-                      requests_items_map,
-                      travelCost_solver=CostDatabase()):
+                      requests_items_map):
         time_out_requests = {}
         if os.path.exists(Configs.time_out_requests):
             with open(Configs.time_out_requests, "r") as f:
                 time_out_requests = json.load(f)
         while request_id_on_order:
             requestID = request_id_on_order.pop()
-            customerID = ongoing_items_map[requests_items_map[requestID]["delivery_only"][0]]["delivery_factory_id"]
+            customerID = ongoing_items_map[requests_items_map[requestID][DemandTypeEnum.delivery_only.name][0]][ItemInfoEnum.delivery_factory_id.name]
             volume, process_time = 0, 0
             time_window_left, time_window_right = None, None
-            for item_id in requests_items_map[requestID]["delivery_only"]:
-                volume -= ongoing_items_map[item_id]["demand"]
-                process_time += ongoing_items_map[item_id]["unload_time"]
-                creation_time = ongoing_items_map[item_id]["creation_time"]
-                committed_completion_time = ongoing_items_map[item_id]["committed_completion_time"]
+            bins = []
+            for item_id in requests_items_map[requestID][DemandTypeEnum.delivery_only.name]:
+                if Configs.constrains[ConstrainEnum.bin_packing]:
+                    bins.append(ongoing_items_map[item_id][ItemInfoEnum.dimension.name])
+                if Configs.constrains[ConstrainEnum.incompatible_items]:
+                    self._incompatible_item_type_set = self._incompatible_item_type_set.union(
+                        set(ongoing_items_map[item_id][RequestInfoEnum.incompatible_item_type_list.name]))
+                volume -= ongoing_items_map[item_id][ItemInfoEnum.demand.name]
+                process_time += ongoing_items_map[item_id][ItemInfoEnum.unload_time.name]
+                creation_time = ongoing_items_map[item_id][ItemInfoEnum.creation_time.name]
+                committed_completion_time = ongoing_items_map[item_id][ItemInfoEnum.committed_completion_time.name]
                 creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
                 committed_completion_time = time.strftime("%Y-%m-%d %H:%M:%S",
                                                           time.localtime(committed_completion_time))
@@ -257,23 +322,22 @@ class Vehicle(object):
                     time_window_right = committed_completion_time
                     requestID_temp = requestID[:requestID.index("V")]
                     if requestID_temp in time_out_requests:
-                        time_window_right = time_out_requests[requestID_temp]["pickup_demand_info"]["time_window"][1]
+                        time_window_right = time_out_requests[requestID_temp][RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.time_window.name][1]
                 else:
                     time_window_left = max(creation_time, time_window_left)
                     time_window_right = min(committed_completion_time, time_window_right)
-            # requestID = requestID + "_ongoing"
+            self._delivery_only_id_bin_map[requestID] = bins
             node = CustomerRequestCombination(customerID,
                                               requestID,
-                                                "delivery",
+                                              DemandTypeEnum.delivery_only.name,
                                               None,
                                               volume,
                                               [str(time_window_left), str(time_window_right)],
                                               process_time,
                                               self._vehicleID)
             left_node = self._route[len(self._route) - 1]
-            travel_cost = travelCost_solver.getTravelCost(left_node.customerID, customerID)
-            arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
-            # print("vehicleID:", self._vehicleID, " requestID:", requestID, " arrive_time:",arrive_time)
+            travel_cost = route_cost.getTravelCost(left_node.customerID, customerID)
+            arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost[RouteCostEnum.travel_time.name])
             node.setVehicleArriveTime(arrive_time)
             left_node.setRightNode(node)
             node.setLeftNode(left_node)
@@ -281,49 +345,53 @@ class Vehicle(object):
             self.updateVolume(volume)
             if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
                 customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
-            flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node, tp="gen_fixed_route")
-            if not flag:
-                # assert flag
-                print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
+            # todo 装卸货资源约束，后续设置开关
+            if Configs.constrains[ConstrainEnum.port_resource]:
+                flag = feasibleRearrangePortAssignmentSchedule(customers, customerID, node, tp="gen_fixed_route")
+                if not flag:
+                    print("固定路线生成失败, requestID:", node.requestID, file=sys.stderr)
+            else:
+                leave_time = arrive_time + timedelta(seconds=Configs.static_process_time_on_customer + node.processTime)
+                node.setVehicleDepartureTime(leave_time)
 
-    def force_insertion(self, request, customers, travelCost_solver=CostDatabase()):
-        pickup_customer_id = request["pickup_demand_info"]["customer_id"]
-        delivery_customer_id = request["delivery_demand_info"]["customer_id"]
-        requestID = request["requestID"]
-        process_time = request["pickup_demand_info"]["process_time"]
-        volume = request["pickup_demand_info"]["volume"]
-        time_window_left = request["pickup_demand_info"]["time_window"][0]
-        time_window_right = request["pickup_demand_info"]["time_window"][1]
+    def force_insertion(self, request, customers):
+        pickup_customer_id = request[RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.customer_id.name]
+        delivery_customer_id = request[RequestInfoEnum.delivery_demand_info.name][DemandInfoEnum.customer_id.name]
+        requestID = request[RequestInfoEnum.requestID.name]
+        process_time = request[RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.process_time.name]
+        volume = request[RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.volume.name]
+        time_window_left = request[RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.time_window.name][0]
+        time_window_right = request[RequestInfoEnum.pickup_demand_info.name][DemandInfoEnum.time_window.name][1]
         pickup_node = CustomerRequestCombination(pickup_customer_id,
                                                  requestID,
-                                                   "pickup",
+                                                 DemandTypeEnum.pickup.name,
                                                  None,
                                                  volume,
                                                  [time_window_left, time_window_right],
                                                  process_time,
                                                  self._vehicleID)
         left_node = self._route[len(self._route) - 1]
-        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, pickup_customer_id)
-        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        travel_cost = route_cost.getTravelCost(left_node.customerID, pickup_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost[RouteCostEnum.travel_time.name])
         pickup_node.setVehicleArriveTime(arrive_time)
-        departure_time = arrive_time + timedelta(seconds=1800+process_time)
+        departure_time = arrive_time + timedelta(seconds=Configs.static_process_time_on_customer + process_time)
         pickup_node.setVehicleDepartureTime(departure_time)
         left_node.setRightNode(pickup_node)
         pickup_node.setLeftNode(left_node)
         self._route.append(pickup_node)
         delivery_node = CustomerRequestCombination(delivery_customer_id,
                                                    requestID,
-                                                     "delivery",
+                                                   DemandTypeEnum.delivery.name,
                                                    None,
                                                    -volume,
                                                    [time_window_left, time_window_right],
                                                    process_time,
                                                    self._vehicleID)
         left_node = self._route[len(self._route) - 1]
-        travel_cost = travelCost_solver.getTravelCost(left_node.customerID, delivery_customer_id)
-        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost["travel_time"])
+        travel_cost = route_cost.getTravelCost(left_node.customerID, delivery_customer_id)
+        arrive_time = left_node.vehicleDepartureTime + timedelta(seconds=travel_cost[RouteCostEnum.travel_time.name])
         delivery_node.setVehicleArriveTime(arrive_time)
-        departure_time = arrive_time + timedelta(seconds=1800 + process_time)
+        departure_time = arrive_time + timedelta(seconds=Configs.static_process_time_on_customer + process_time)
         delivery_node.setVehicleDepartureTime(departure_time)
         left_node.setRightNode(delivery_node)
         delivery_node.setLeftNode(left_node)
@@ -339,7 +407,7 @@ class Vehicle(object):
         self._status = 'idle'
         depot_node = CustomerRequestCombination(self._depotID,
                                                 0,
-                                                  "depot",
+                                                "depot",
                                                 None,
                                                 volume,
                                                 None,

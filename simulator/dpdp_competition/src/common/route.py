@@ -40,12 +40,19 @@ class RouteInfo(object):
 
 
 class Map(object):
-    def __init__(self, code_to_route):
+    def __init__(self, code_to_route, route_cost_map):
         self.__code_to_route = code_to_route
         # distance between factories, unit is km
         self.__factory_id_pair_to_distance = self.__get_distance_matrix_between_factories()
         # time between factories, unit is second
         self.__factory_id_pair_to_time = self.__get_time_matrix_between_factories()
+        self.__route_cost_map = route_cost_map
+
+    def get_polyline_between_factories(self, src_factory_id, dest_factory_id):
+        if src_factory_id == dest_factory_id:
+            return []
+        else:
+            return self.__route_cost_map[src_factory_id+dest_factory_id]["polyline"]
 
     def __get_distance_matrix_between_factories(self):
         if len(self.__code_to_route) == 0:

@@ -3,17 +3,19 @@ from typing import Dict
 import numpy as np
 from copy import deepcopy
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 import sys
 
-from simulator.dpdp_competition.algorithm.src.vehicle import Vehicle
-from simulator.dpdp_competition.algorithm.src.customer import Customer
-from simulator.dpdp_competition.algorithm.src.requestPool import RequestPool
-from simulator.dpdp_competition.algorithm.src.Operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
+from simulator.dpdp_competition.algorithm.src.common.vehicle import Vehicle
+from simulator.dpdp_competition.algorithm.src.common.customer import Customer
+from simulator.dpdp_competition.algorithm.src.common.request_pool import RequestPool
+from simulator.dpdp_competition.algorithm.src.algo.operator import ShawRemovalOperator, RandomRemovalOperator, WorstRemovalOperator, GreedyInsertionOperator, \
     RegretInsertionOperator
-from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import checker, feasibleRearrangePortAssignmentSchedule, SourcePool
+from simulator.dpdp_competition.algorithm.src.utils.utlis import feasibleRearrangePortAssignmentSchedule
+from simulator.dpdp_competition.algorithm.src.common.source_pool import SourcePool
 from simulator.dpdp_competition.algorithm.conf.configs import Configs
+from simulator.dpdp_competition.algorithm.src.enum.constrain_enum import ConstrainEnum
+from simulator.dpdp_competition.algorithm.src.utils.route_cost_util import route_cost
 
 
 class AdaptiveLargeNeighborhoodSearch(object):
@@ -23,7 +25,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                  requests: RequestPool,
                  customers: Dict[str, Customer],
                  objective_score: float,
-                 travelCost_solver: CostDatabase,
                  time2Go,
                  start_time = time.time(),
                  mission="improvement"):
@@ -31,7 +32,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         self._customers = self._source_pool.customers
         self._requests = self._source_pool.requests
         self._vehicles = self._source_pool.vehicles
-        self._travelCost_solver = travelCost_solver
+        self._travelCost_solver = route_cost
         self._bestSolution = {"score": objective_score,
                               "source_pool": deepcopy(self._source_pool)}
         self._currentSolution = {"score": objective_score,
@@ -153,19 +154,14 @@ class AdaptiveLargeNeighborhoodSearch(object):
                         if node.requestID in customer_object.get_node_port_map:
                             port_index = customer_object.get_node_port_map[node.requestID]
                             customer_object.getCurrentPortStatus[port_index[0]][port_index[1]] = node
-        for node in active_nodes:
-            if node in self._vehicles[node.vehicleID].getCurrentRoute:
-                flag = feasibleRearrangePortAssignmentSchedule(self._customers, node.customerID, node, tp="destroy")
-                if not flag:
-                    # print("ALNS destroy process fail!!!!!!!!!")
-                    return False
-                else:
-                    # for customerID in self._customers:
-                    #     if self._customers[customerID].getDispatchedRequestSet:
-                    #         for requestID in self._customers[customerID].getDispatchedRequestSet:
-                    #             node_temp = self._customers[customerID].getDispatchedRequestSet[requestID]
-                    #             assert node_temp in self._vehicles[node_temp.vehicleID].getCurrentRoute
-                    continue
+        if Configs.constrains[ConstrainEnum.port_resource]:
+            for node in active_nodes:
+                if node in self._vehicles[node.vehicleID].getCurrentRoute:
+                    flag = feasibleRearrangePortAssignmentSchedule(self._customers, node.customerID, node, tp="destroy")
+                    if not flag:
+                        return False
+                    else:
+                        continue
         return True
 
     def _destroy(self):
@@ -206,8 +202,7 @@ class AdaptiveLargeNeighborhoodSearch(object):
         if repairID == "greedy":
             self.repairOperator = {"engine": GreedyInsertionOperator(self._vehicles,
                                                                      self._requests,
-                                                                     self._customers,
-                                                                     self._travelCost_solver),
+                                                                     self._customers),
                                    "engineID": "greedy"}
             self._repairOperator_paras["greedy"]["trials"] += 1
         else:
@@ -313,10 +308,6 @@ class AdaptiveLargeNeighborhoodSearch(object):
                 self._vehicles = current_source_pool.vehicles
                 self._customers = current_source_pool.customers
                 self._requests = current_source_pool.requests
-            # current_source_pool = deepcopy(self._currentSolution["source_pool"])
-            # self._vehicles = current_source_pool.vehicles
-            # self._customers = current_source_pool.customers
-            # self._requests = current_source_pool.requests
             total_iteration_count += 1
             self._SA_temperature /= self._SA_cool_rate
 

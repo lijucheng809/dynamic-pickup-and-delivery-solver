@@ -25,7 +25,7 @@ class Configs(object):
     MAX_SCORE = 9999999999
 
     # 算法切片的时间间隔, time interval of simulator
-    ALG_RUN_FREQUENCY = 10  # 单位分钟
+    ALG_RUN_FREQUENCY = 25  # 单位分钟
 
     # 多目标权重之间的系数
     LAMDA = 10000
@@ -36,6 +36,9 @@ class Configs(object):
     STANDARD_PALLET_LABEL = "PALLET"
     SMALL_PALLET_LABEL = "HALF_PALLET"
     BOX_LABEL = "BOX"
+    PALLET_DIMENSION_MAP = {STANDARD_PALLET_LABEL: [2200, 1200, 1150],
+                            SMALL_PALLET_LABEL: [1200, 1000, 1000],
+                            BOX_LABEL: [800, 600, 1000]}
 
     # 订单状态 0: 初始(initialization), 1: 已生成(generated), 2: 进行中(ongoing), 3: 完成(Completed)
     ORDER_STATUS_TO_CODE = {"INITIALIZATION": 0, "GENERATED": 1, "ONGOING": 2, "COMPLETED": 3}
@@ -45,7 +48,7 @@ class Configs(object):
     UNLOAD_SPEED = 0.25  # 大板/min, unit is standard pallet per minute
 
     # 靠台时间
-    DOCK_APPROACHING_TIME = 30 * 60  # unit: second
+    DOCK_APPROACHING_TIME = 15 * 60  # unit: second
 
     # 文件路径
     root_folder_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,8 +61,10 @@ class Configs(object):
 
     route_info_file = "route_info.csv"
     factory_info_file = "factory_info.csv"
+    route_cost_map_file = "route_cost_map.json"
     route_info_file_path = os.path.join(benchmark_folder_path, route_info_file)
     factory_info_file_path = os.path.join(benchmark_folder_path, factory_info_file)
+    route_cost_map_path = os.path.join(benchmark_folder_path, route_cost_map_file)
 
     algorithm_data_interaction_folder_path = os.path.join(algorithm_folder_path, "data_interaction")
     if not os.path.exists(algorithm_data_interaction_folder_path):

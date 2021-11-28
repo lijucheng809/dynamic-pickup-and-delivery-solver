@@ -20,8 +20,8 @@
 
 import os
 
-from src.conf.configs import Configs
-from src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.utils.logging_engine import logger
 
 
 # Output logs through console and files

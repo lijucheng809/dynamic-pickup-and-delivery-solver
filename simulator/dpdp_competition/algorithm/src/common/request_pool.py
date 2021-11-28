@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from simulator.dpdp_competition.algorithm.src.enum.request_info_enum import RequestInfoEnum
 
 class RequestPool(object):
     def __init__(self):
@@ -16,9 +17,14 @@ class RequestPool(object):
                           "demand": volume,
                           "time_window": timeWindow}
         """
-        self._unDispatchedRequestPool = dict()
-        self._dispatchedRequestPool = dict()
-        self._finishedRequestPool = dict()
+        self.__unDispatchedRequestPool = dict()
+        self.__dispatchedRequestPool = dict()
+        self.__finishedRequestPool = dict()
+        self.__request_id_bin_map = dict()
+        self.__request_is_dimension_map = dict()
+
+    def push_request_bin_map_2_request_pool(self, request_bin_map: dict):
+        self.__request_id_bin_map = request_bin_map
 
     def updateUnDispatchRequest(self, requests: dict, index="add"):
         """
@@ -28,10 +34,10 @@ class RequestPool(object):
         """
         if index == "add":
             for key, value in requests.items():
-                self._unDispatchedRequestPool[key] = value
+                self.__unDispatchedRequestPool[key] = value
         else:
             for key in requests:
-                self._unDispatchedRequestPool.pop(key)
+                self.__unDispatchedRequestPool.pop(key)
 
     def updateDispatchedRequestPool(self,
                                     request_id: str,
@@ -44,14 +50,14 @@ class RequestPool(object):
         :return: None
         """
         if index == "add":
-            self._dispatchedRequestPool[request_id] = self._unDispatchedRequestPool[request_id]
-            self._unDispatchedRequestPool.pop(request_id)
+            self.__dispatchedRequestPool[request_id] = self.__unDispatchedRequestPool[request_id]
+            self.__unDispatchedRequestPool.pop(request_id)
         elif index == "finish":
-            self._dispatchedRequestPool[request_id]["finishTime"] = request_finish_time
+            self.__dispatchedRequestPool[request_id]["finishTime"] = request_finish_time
             self._updateFinishedRequestPool(request_id)
-            self._dispatchedRequestPool.pop(request_id)
+            self.__dispatchedRequestPool.pop(request_id)
         else:
-            self._dispatchedRequestPool.pop(request_id)
+            self.__dispatchedRequestPool.pop(request_id)
 
     def _updateFinishedRequestPool(self, request_id: str):
         """
@@ -59,17 +65,25 @@ class RequestPool(object):
         :param request_id: dict
         :return: None
         """
-        self._finishedRequestPool[request_id] = self._dispatchedRequestPool[request_id]
+        self.__finishedRequestPool[request_id] = self.__dispatchedRequestPool[request_id]
 
     def emptyUnDispatchedPool(self):
-        if not bool(self._unDispatchedRequestPool):
+        if not bool(self.__unDispatchedRequestPool):
             return True
         return False
 
+    def gen_request_id_dimension_map(self):
+        for request_id, request in self.__unDispatchedRequestPool.items():
+            self.__request_is_dimension_map[request_id] = request[RequestInfoEnum.bin_dimension.name]
+
+    @property
+    def get_request_id_dimension_map(self):
+        return self.__request_is_dimension_map
+
     @property
     def getUnDispatchedPool(self):
-        return self._unDispatchedRequestPool
+        return self.__unDispatchedRequestPool
 
     @property
     def getDispatchedPool(self):
-        return self._dispatchedRequestPool
+        return self.__dispatchedRequestPool

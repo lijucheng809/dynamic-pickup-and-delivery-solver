@@ -71,7 +71,7 @@ class Order(object):
 class OrderItem(object):
     def __init__(self, item_id: str, item_type: str, order_id: str, demand: float,
                  pickup_factory_id: str, delivery_factory_id: str, creation_time: int, committed_completion_time: int,
-                 loading_time: int, unloading_time: int, delivery_state=0):
+                 loading_time: int, unloading_time: int, dimension=None, delivery_state=0):
         """
         订单内的物料, Item of the order
         :param item_id: 物料编号
@@ -97,3 +97,4 @@ class OrderItem(object):
         self.load_time = loading_time
         self.unload_time = unloading_time
         self.delivery_state = delivery_state
+        self.dimension = dimension

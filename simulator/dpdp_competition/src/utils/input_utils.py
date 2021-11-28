@@ -20,16 +20,16 @@
 
 import datetime
 import time
-
+import json
 import pandas as pd
 
-from src.common.factory import Factory
-from src.common.order import Order, OrderItem
-from src.common.route import Map
-from src.common.route import RouteInfo
-from src.common.vehicle import Vehicle
-from src.conf.configs import Configs
-from src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.common.factory import Factory
+from simulator.dpdp_competition.src.common.order import Order, OrderItem
+from simulator.dpdp_competition.src.common.route import Map
+from simulator.dpdp_competition.src.common.route import RouteInfo
+from simulator.dpdp_competition.src.common.vehicle import Vehicle
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.utils.logging_engine import logger
 
 
 def get_initial_data(data_file_path: str, vehicle_info_file_path: str, route_info_file_path: str,
@@ -50,7 +50,9 @@ def get_initial_data(data_file_path: str, vehicle_info_file_path: str, route_inf
     # 获取地图信息, get the route map containing distance and time matrix between factories
     code_to_route = get_route_map(route_info_file_path)
     logger.info(f"Get {len(code_to_route)} routes")
-    route_map = Map(code_to_route)
+    with open(Configs.route_cost_map_path, "r") as f:
+        route_cost_map = json.load(f)
+    route_map = Map(code_to_route, route_cost_map)
 
     # 车辆基本信息, get the vehicles
     id_to_vehicle = get_vehicle_info(vehicle_info_file_path)
@@ -118,9 +120,11 @@ def get_item_list(order):
         num = order.components.get(demand_label, 0)
         for i in range(num):
             item_id = f"{order.id}-{seq}"
+            dimension = Configs.PALLET_DIMENSION_MAP[demand_label]
             item_list.append(
                 OrderItem(item_id, demand_label, order.id, demand, order.pickup_factory_id, order.delivery_factory_id,
-                          order.creation_time, order.committed_completion_time, load_time, unload_time, order.delivery_state))
+                          order.creation_time, order.committed_completion_time, load_time, unload_time,
+                          dimension=dimension, delivery_state=order.delivery_state))
             seq += 1
     return item_list
 
@@ -162,7 +166,10 @@ def get_vehicle_info(file_path: str):
         capacity = int(row['capacity'])
         operation_time = int(row['operation_time'])
         gps_id = str(row['gps_id'])
-        vehicle = Vehicle(car_num, capacity, gps_id, operation_time)
+        dimension = str(row["dimension"]).split("*")
+        dimension = [float(dimension[0]), float(dimension[1]), float(dimension[2])]
+        compatible_item_type_list = str(row["compatible_item_type"]).split(",")
+        vehicle = Vehicle(car_num, capacity, gps_id, operation_time, dimension, compatible_item_type_list)
         if car_num not in id_to_vehicle:
             id_to_vehicle[car_num] = vehicle
     return id_to_vehicle

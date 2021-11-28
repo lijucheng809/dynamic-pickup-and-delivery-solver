@@ -1,4 +1,5 @@
 import os
+from simulator.dpdp_competition.algorithm.src.enum.constrain_enum import ConstrainEnum
 
 
 class Configs(object):
@@ -46,3 +47,16 @@ class Configs(object):
     alns_reaction_parameter = 0.3
 
     vehicle_capacity = 15
+
+    constrains = {ConstrainEnum.bin_packing: True,
+                  ConstrainEnum.capacity: True,
+                  ConstrainEnum.time_window: True,
+                  ConstrainEnum.port_resource: False,
+                  ConstrainEnum.lifo: True,
+                  ConstrainEnum.incompatible_items: False,
+                  ConstrainEnum.incompatible_item_vehicle: False}
+    heuristic_engine = False
+
+
+if __name__ == "__main__":
+    pass

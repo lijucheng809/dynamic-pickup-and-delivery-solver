@@ -1,23 +1,24 @@
-from typing import List, Dict
+from typing import List
 from datetime import datetime, timedelta
 from queue import PriorityQueue
 
-from simulator.dpdp_competition.algorithm.src.TravelCost import CostDatabase
-from simulator.dpdp_competition.algorithm.src.utlis import CustomerRequestCombination
+from simulator.dpdp_competition.algorithm.src.common.customer_request_combination import CustomerRequestCombination
 from simulator.dpdp_competition.algorithm.conf.configs import Configs
+from simulator.dpdp_competition.algorithm.src.utils.route_cost_util import route_cost
+from simulator.dpdp_competition.algorithm.src.enum.route_cost_enum import RouteCostEnum
 
 
 class Customer(object):
     def __init__(self,
                  position,
-                 customerID,
+                 customer_id,
                  port_num=6):
         """
         :param position: [lng, lat]
-        :param customerID: "str or int"
+        :param customer_id: "str or int"
         :param port_num: 可供停靠的卡位数
         """
-        self._customerID = customerID
+        self._customer_id = customer_id
         self._position = position
         self._port_num = port_num
         self._dispatchedRequests = dict()  # 已分配分配卡位的需求
@@ -25,7 +26,6 @@ class Customer(object):
         self._unfinished_demand_info = dict()
         self._finish_demand_info = dict()  # 可存于数据库，用于后续数据分析
         self._node_port_map = dict()
-
 
     @property
     def getDispatchedRequestSet(self):
@@ -115,7 +115,7 @@ class Customer(object):
 
         return right_node
 
-    def rearrangeReservedPort(self, tp="normal", travelCost_solver=CostDatabase()):
+    def rearrangeReservedPort(self, tp="normal"):
         """
         当有新的装卸需求插入时，可能会打乱当前卡位的分配方案，需要对车辆进行重新分配卡位，按照先到先服务原则
         :return:
@@ -201,8 +201,8 @@ class Customer(object):
                     if right_node:
                         arrive_time = earliestDepartureTime + \
                                       timedelta(seconds=
-                                                travelCost_solver.getTravelCost(right_node.leftNode.customerID,
-                                                                                right_node.customerID)["travel_time"])
+                                                route_cost.getTravelCost(right_node.leftNode.customerID,
+                                                                         right_node.customerID)[RouteCostEnum.travel_time.name])
                         if node.vehicleDepartureTime != earliestDepartureTime or right_node.vehicleArriveTime != arrive_time:
                             right_node.setVehicleArriveTime(arrive_time)
                             nodeList.append(right_node)
@@ -249,9 +249,9 @@ class Customer(object):
                     if right_node:
                         arrive_time = node_departure_time + \
                                       timedelta(seconds=
-                                                travelCost_solver.getTravelCost(right_node.leftNode.customerID,
-                                                                                right_node.customerID)[
-                                                    "travel_time"])
+                                                route_cost.getTravelCost(right_node.leftNode.customerID,
+                                                                         right_node.customerID)[
+                                                    RouteCostEnum.travel_time.name])
                         if node.vehicleDepartureTime != node_departure_time or right_node.vehicleArriveTime != arrive_time:
                             right_node.setVehicleArriveTime(arrive_time)
                             nodeList.append(right_node)

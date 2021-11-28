@@ -20,7 +20,7 @@
 
 import sys
 import time
-from src.conf.configs import Configs
+from simulator.dpdp_competition.src.conf.configs import Configs
 
 
 class History(object):
@@ -33,7 +33,7 @@ class History(object):
         self.__vehicle_order_list = {}
 
     def add_vehicle_order_history(self, vehicle_id, update_time, cur_factory_id, pickup_items, delivery_items):
-        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(update_time))
+        update_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(update_time))
         if vehicle_id not in self.__vehicle_order_list:
             self.__vehicle_order_list[vehicle_id] = []
 
@@ -71,14 +71,15 @@ class History(object):
     def add_history_of_vehicles(self, id_to_vehicle: dict, to_time=0):
         if to_time == 0:
             to_time = sys.maxsize
-
         for vehicle_id, vehicle in id_to_vehicle.items():
             if len(vehicle.cur_factory_id) > 0:
                 if vehicle.leave_time_at_current_factory <= to_time:
                     self.add_vehicle_position_history(vehicle_id,
                                                       vehicle.leave_time_at_current_factory,
                                                       vehicle.cur_factory_id)
-
+            else:
+                # todo 获取当前时刻的经纬度，通过路网获得，原则上cur_factory_id为空，destination一定不为空
+                pass
             if vehicle.destination is not None:
                 if vehicle.destination.leave_time <= to_time:
                     self.add_vehicle_position_history(vehicle.id,

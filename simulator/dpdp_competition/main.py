@@ -23,16 +23,16 @@ import datetime
 import numpy as np
 import sys
 
-from src.conf.configs import Configs
-from src.simulator.simulate_api import simulate
-from src.utils.log_utils import ini_logger, remove_file_handler_of_logging
-from src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.simulator.simulate_api import simulate
+from simulator.dpdp_competition.src.utils.log_utils import ini_logger, remove_file_handler_of_logging
+from simulator.dpdp_competition.src.utils.logging_engine import logger
 # from naie.metrics import report
 
 if __name__ == "__main__":
     # if you want to traverse all instances, set the selected_instances to []
     # selected_instances = Configs.selected_instances
-    selected_instances = []
+    selected_instances = [30]
     if selected_instances:
         test_instances = selected_instances
     else:

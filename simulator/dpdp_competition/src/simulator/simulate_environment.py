@@ -24,19 +24,20 @@ import os
 import sys
 import time
 
-from src.common.dispatch_result import DispatchResult
-from src.common.input_info import InputInfo
-from src.conf.configs import Configs
-from src.simulator.history import History
-from src.simulator.vehicle_simulator import VehicleSimulator
-from src.utils.checker import Checker
-from src.utils.evaluator import Evaluator
-from src.utils.json_tools import convert_input_info_to_json_files
-from src.utils.json_tools import get_output_of_algorithm
-from src.utils.json_tools import subprocess_function, get_algorithm_calling_command
-from src.utils.logging_engine import logger
-from src.utils.tools import get_item_dict_from_order_dict, get_order_items_to_be_dispatched_of_cur_time
-from src.utils.tools import get_item_list_of_vehicles
+from simulator.dpdp_competition.src.common.dispatch_result import DispatchResult
+from simulator.dpdp_competition.src.common.input_info import InputInfo
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.simulator.history import History
+from simulator.dpdp_competition.src.simulator.vehicle_simulator import VehicleSimulator
+from simulator.dpdp_competition.src.utils.checker import Checker
+from simulator.dpdp_competition.src.utils.evaluator import Evaluator
+from simulator.dpdp_competition.src.utils.json_tools import convert_input_info_to_json_files
+from simulator.dpdp_competition.src.utils.json_tools import get_output_of_algorithm
+from simulator.dpdp_competition.src.utils.json_tools import subprocess_function, get_algorithm_calling_command
+from simulator.dpdp_competition.src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.utils.tools import get_item_dict_from_order_dict, \
+    get_order_items_to_be_dispatched_of_cur_time
+from simulator.dpdp_competition.src.utils.tools import get_item_list_of_vehicles
 
 
 class SimulateEnvironment(object):
@@ -138,7 +139,8 @@ class SimulateEnvironment(object):
         self.total_score = Evaluator.calculate_total_score(self.history, self.route_map, len(self.id_to_vehicle))
 
         vehicle_order_list = self.history.get_vehicle_order_history()
-        output_file_path = os.path.join(Configs.algorithm_data_interaction_folder_path, self._instance_name+".json")
+        output_file_path = os.path.join(Configs.algorithm_data_interaction_folder_path, self._instance_name +
+                                        "_output.json")
         with open(output_file_path, "w") as f:
             json.dump(vehicle_order_list, f, indent=4)
 
@@ -160,7 +162,8 @@ class SimulateEnvironment(object):
         # 更新车辆状态
         self.update_status_of_vehicles(self.vehicle_simulator.vehicle_id_to_cur_position_info,
                                        self.vehicle_simulator.vehicle_id_to_destination,
-                                       self.vehicle_simulator.vehicle_id_to_carrying_items)
+                                       self.vehicle_simulator.vehicle_id_to_carrying_items,
+                                       self.vehicle_simulator.vehicle_id_to_former_position_info)
 
         # 根据当前时间选择待分配订单的物料集合
         # Select the item collection of the orders to be allocated according to the current time
@@ -203,14 +206,21 @@ class SimulateEnvironment(object):
 
     # 更新车辆状态
     def update_status_of_vehicles(self, vehicle_id_to_cur_position_info, vehicle_id_to_destination,
-                                  vehicle_id_to_carry_items):
+                                  vehicle_id_to_carry_items, vehicle_id_to_former_position_info):
         for vehicle_id, vehicle in self.id_to_vehicle.items():
+            current_mileage = Evaluator.calculate_total_distance(
+                {vehicle_id: self.history.get_vehicle_position_history()[vehicle_id]},
+                self.route_map)
+            vehicle.current_mileage = current_mileage
             if vehicle_id in vehicle_id_to_cur_position_info:
                 cur_position_info = vehicle_id_to_cur_position_info.get(vehicle_id)
                 vehicle.set_cur_position_info(cur_position_info.get("cur_factory_id"),
                                               cur_position_info.get("update_time"),
                                               cur_position_info.get("arrive_time_at_current_factory"),
                                               cur_position_info.get("leave_time_at_current_factory"))
+                if len(cur_position_info.get("cur_factory_id")) == 0 and vehicle_id in vehicle_id_to_former_position_info:
+                    vehicle.former_factory_id = vehicle_id_to_former_position_info[vehicle_id]["former_factory_id"]
+                    vehicle.leave_time_at_former_factory = vehicle_id_to_former_position_info[vehicle_id]["leave_time_at_former_factory"]
             else:
                 logger.error(f"Vehicle {vehicle_id} does not have updated position information")
 
@@ -223,7 +233,7 @@ class SimulateEnvironment(object):
                 vehicle.carrying_items = vehicle_id_to_carry_items.get(vehicle_id)
             else:
                 logger.error(f"Vehicle {vehicle_id} does not have the information of carrying items")
-
+            vehicle.set_polyline_from_src_2_dest(self.route_map, self.cur_time)
             vehicle.planned_route = []
 
     # 派单环节

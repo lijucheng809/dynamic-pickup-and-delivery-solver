@@ -132,12 +132,19 @@ def __convert_vehicle_to_dict(vehicle):
         "operation_time": vehicle.operation_time,
         "capacity": vehicle.board_capacity,
         "gps_id": vehicle.gps_id,
+        "cur_gps_id": vehicle.cur_gps_id,
         "update_time": vehicle.gps_update_time,
+        "former_factory_id": vehicle.former_factory_id,
+        "leave_time_at_former_factory": vehicle.leave_time_at_former_factory,
         "cur_factory_id": vehicle.cur_factory_id,
         "arrive_time_at_current_factory": vehicle.arrive_time_at_current_factory,
         "leave_time_at_current_factory": vehicle.leave_time_at_current_factory,
         "carrying_items": [item.id for item in carrying_items],
-        "destination": __convert_destination_to_dict(vehicle.destination)
+        "destination": __convert_destination_to_dict(vehicle.destination),
+        "polyline_to_destination": vehicle.polyline_to_destination,
+        "dimension": vehicle.dimension,
+        "compatible_item_type_list": vehicle.compatible_item_type_list,
+        "current_mileage": vehicle.current_mileage,
     }
     return vehicle_property
 

@@ -22,8 +22,8 @@ import datetime
 
 import simpy
 
-from src.conf.configs import Configs
-from src.utils.logging_engine import logger
+from simulator.dpdp_competition.src.conf.configs import Configs
+from simulator.dpdp_competition.src.utils.logging_engine import logger
 
 
 class VehicleSimulator(object):
@@ -39,6 +39,7 @@ class VehicleSimulator(object):
         self.vehicle_id_to_destination = {}
         self.vehicle_id_to_cur_position_info = {}
         self.vehicle_id_to_carrying_items = {}
+        self.vehicle_id_to_former_position_info = {}
 
     def __ini_dock_resources_of_factories(self, id_to_factory: dict):
         self.factory_id_to_dock_resource = {}
@@ -160,6 +161,7 @@ class VehicleSimulator(object):
         self.vehicle_id_to_destination = {}
         self.vehicle_id_to_cur_position_info = {}
         self.vehicle_id_to_carrying_items = {}
+        self.vehicle_id_to_former_position_info = {}
 
         self.get_position_info_of_vehicles(id_to_vehicle, to_time)
         self.get_destination_of_vehicles(id_to_vehicle, to_time)
@@ -177,13 +179,15 @@ class VehicleSimulator(object):
             cur_factory_id = ""
             arrive_time_at_current_factory = 0
             leave_time_at_current_factory = 0
-            for node in node_list:
+            for index, node in enumerate(node_list):
                 if node.arr_time <= to_time <= node.leave_time:
                     cur_factory_id = node.id
                     arrive_time_at_current_factory = node.arr_time
                     leave_time_at_current_factory = node.leave_time
-
-            if len(cur_factory_id) == 0 and node_list[-1].leave_time < to_time:
+                if index > 0 and node_list[index-1].leave_time < to_time < node.arr_time:
+                    self.vehicle_id_to_former_position_info[vehicle_id] = {"former_factory_id": node_list[index-1].id,
+                                                                           "leave_time_at_former_factory": node_list[index-1].leave_time}
+            if len(cur_factory_id) == 0 and node_list[-1].leave_time < to_time:  # 执行完所有任务之后在原地停车
                 cur_factory_id = node_list[-1].id
                 arrive_time_at_current_factory = node_list[-1].arr_time
                 leave_time_at_current_factory = max(node_list[-1].leave_time, to_time)

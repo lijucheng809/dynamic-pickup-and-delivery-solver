@@ -20,11 +20,13 @@
 
 import copy
 
-from src.common.stack import Stack
+from simulator.dpdp_competition.src.common.stack import Stack
+from simulator.dpdp_competition.src.common.route import Map
 
 
 class Vehicle(object):
-    def __init__(self, car_num: str, capacity: int, gps_id: str, operation_time: int, carrying_items=None):
+    def __init__(self, car_num: str, capacity: int, gps_id: str, operation_time: int, dimension: list,
+                 compatible_item_type_list: list, carrying_items=None):
         """
         :param car_num: 车牌号, id of the vehicle
         :param capacity: unit is standard pallet, e.g. 15
@@ -36,11 +38,14 @@ class Vehicle(object):
         self.operation_time = operation_time  # Unit: hour, 12h or 24h
         self.board_capacity = capacity
         self.gps_id = gps_id
-
+        self.dimension = dimension
+        self.compatible_item_type_list = compatible_item_type_list
         # 车辆当前载的货物, Carrying items of the vehicle consider the Last-in-first-out constraint
         if carrying_items is None:
             carrying_items = []
         self.__carrying_items = self.ini_carrying_items(carrying_items)
+        self.current_mileage = 0
+        self.cur_gps_id = []
 
         """
         Sequence of visiting factories: 
@@ -57,10 +62,16 @@ class Vehicle(object):
         self.arrive_time_at_current_factory = 0
         self.leave_time_at_current_factory = 0
 
+        # 车辆上一个途径工厂id
+        self.former_factory_id = ""
+        # 车辆离开上一个工厂的时间
+        self.leave_time_at_former_factory = 0
         # 车辆当前的目的地, 目的地一旦确定不可更改, 直到车辆到达
         # We cannot change the current destination of the vehicle until the vehicle has arrived
         self.destination = None
 
+        # 到destination的行车路径
+        self.polyline_to_destination = []
         # 车辆的规划路径, route is node list, not containing the destination
         self.planned_route = []
 
@@ -117,3 +128,30 @@ class Vehicle(object):
 
     def gather_attrs(self):
         return ",".join("{}={}".format(k, getattr(self, k)) for k in self.__dict__.keys())
+
+    def set_polyline_from_src_2_dest(self, rout_map: Map, cur_time: int):
+        if len(self.former_factory_id) == 0 and self.destination:
+            self.polyline_to_destination = rout_map.get_polyline_between_factories(self.cur_factory_id, self.destination.id)
+        elif self.destination and len(self.cur_factory_id) == 0:
+            polyline_former_dest = rout_map.get_polyline_between_factories(self.former_factory_id, self.destination.id)
+            duration_former_dest = self.destination.arrive_time - self.leave_time_at_former_factory
+            cur_duration = cur_time - self.leave_time_at_former_factory
+            interval = duration_former_dest / (len(polyline_former_dest) + 1)
+            if cur_duration < interval:
+                self.cur_gps_id = polyline_former_dest[0]
+                self.polyline_to_destination = polyline_former_dest
+            elif cur_duration > interval * (len(polyline_former_dest)):
+                self.cur_gps_id = polyline_former_dest[-1]
+                self.polyline_to_destination = [polyline_former_dest[-1]]
+            else:
+                start, end = 0, len(polyline_former_dest) - 2
+                while start <= end:
+                    mid = (start + end) // 2
+                    if interval * (mid + 1) <= cur_duration < interval * (mid + 2):
+                        self.cur_gps_id = polyline_former_dest[mid]
+                        self.polyline_to_destination = polyline_former_dest[mid:]
+                        break
+                    elif cur_duration < interval * (mid + 1):
+                        end = mid
+                    else:
+                        start = mid + 1
