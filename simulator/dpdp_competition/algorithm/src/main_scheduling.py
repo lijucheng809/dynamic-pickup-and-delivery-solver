@@ -33,7 +33,7 @@ def scheduling():
     '''调度运算'''
     dpdp_solver.constructEngine(time2Go=time_2_go, CPU_limit=Configs.algo_run_time - 1)  # 初始解(greedy策略)
     middle_tim = time.time()
-
+    # print("construct ", middle_tim-start_time)
     if Configs.heuristic_engine:  # ALNS
         left_time_2_heuristic = Configs.algo_run_time - (middle_tim - start_time) / 60. - 0.5
         if len(new_requests) > 10 and left_time_2_heuristic > 3:

@@ -37,7 +37,9 @@ class Configs(object):
     alns_better_than_current = 3
     alns_worst_than_current = 1
     alns_none_improve_iteration = 25
-    algo_run_time = 10
+    alns_regret_operator_degree = 2
+    algo_run_time = 15
+
 
     weighted_objective_function = 1
     shaw_removal_randomness_value = 4
@@ -55,7 +57,7 @@ class Configs(object):
                   ConstrainEnum.lifo: True,
                   ConstrainEnum.incompatible_items: False,
                   ConstrainEnum.incompatible_item_vehicle: False}
-    heuristic_engine = False
+    heuristic_engine = True
 
 
 if __name__ == "__main__":

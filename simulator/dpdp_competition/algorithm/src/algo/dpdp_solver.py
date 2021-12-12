@@ -263,6 +263,7 @@ class DPDPSolver(object):
         else:
             self._insertion_idle_vehicle()
         self._gen_object_score()
+        self._print_solution()
 
     def _print_solution(self):
         objective_score = 0
@@ -314,10 +315,10 @@ class DPDPSolver(object):
     def _gen_object_score(self):
         self.objective_score = 0
         for vehicleID in self._vehiclesPool:
-            if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
-                self._vehiclesPool[vehicleID].updateTravelCost()
-                self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
-                self.objective_score += self._vehiclesPool[vehicleID].getMileage
+            # if len(self._vehiclesPool[vehicleID].getCurrentRoute) > 1:
+            self._vehiclesPool[vehicleID].updateTravelCost()
+            self.objective_score += self._vehiclesPool[vehicleID].getCurrentRouteCost
+            self.objective_score += self._vehiclesPool[vehicleID].getMileage
 
     def foliumPlot(self, customer_id_info_map):
         # vehicle_node_map = dict()

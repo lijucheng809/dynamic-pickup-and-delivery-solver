@@ -117,7 +117,7 @@ class Vehicle(object):
                 node1, node2 = self._route[index], self._route[index + 1]
                 travel_cost = route_cost.getTravelCost(node1.customerID, node2.customerID)
                 total_distance += travel_cost[RouteCostEnum.distance.name]
-                total_travel_time += travel_cost[RouteCostEnum.travel_time.name]
+                # total_travel_time += travel_cost[RouteCostEnum.travel_time.name]
             weight = Configs.weighted_objective_function
             self._currentTravelCost = weight * total_distance + (1 - weight) * total_travel_time
         else:
@@ -210,17 +210,18 @@ class Vehicle(object):
         if node_index_in_route < len(self._route) - 1:
             self._route[node_index_in_route].setRightNode(self._route[node_index_in_route + 1])
             self._route[node_index_in_route + 1].setLeftNode(self._route[node_index_in_route])
-        if request[RequestInfoEnum.requestID.name] not in customers[customer_id].getUnfinishedDemands:
+
+        if request[RequestInfoEnum.requestID.name] not in customers[customer_id].getUnfinishedDemands: # todo 貌似没啥用，考虑删掉
             customers[customer_id].addNewDemand(request[RequestInfoEnum.requestID.name], request[demand_type + "_demand_info"])
         self.updateVolume(request[demand_type + "_demand_info"][DemandInfoEnum.volume.name])
 
         if demand_type == DemandTypeEnum.delivery.name and not self.underCapacity():  # 因为PD问题的特殊性，需要在delivery插入后，对载重约束再做一次判断
             return False
 
-        if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
-            customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
-        assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
         if Configs.constrains[ConstrainEnum.port_resource]:
+            if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
+                customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
+            assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
             flag = feasibleRearrangePortAssignmentSchedule(customers, customer_id, node)
             if flag:
                 vehicle_node = self._route[node_index_in_route]
@@ -245,8 +246,8 @@ class Vehicle(object):
                 is_advance_arrive = True
                 if new_arrive_time > self._route[node_index_in_route+1].vehicleArriveTime:
                     time_delta = (new_arrive_time-self._route[node_index_in_route+1].vehicleArriveTime).seconds
-                else:
                     is_advance_arrive = False
+                else:
                     time_delta = (self._route[node_index_in_route+1].vehicleArriveTime - new_arrive_time).seconds
                 for i in range(node_index_in_route+1, len(self._route)):
                     if is_advance_arrive:
@@ -266,6 +267,105 @@ class Vehicle(object):
 
             else:
                 return True
+
+    def insert_node(self,
+                  customers: Dict[str, Customer],
+                  customer_id: str,
+                  demand_type: str,
+                  request: dict,
+                  node_index_in_route: int):
+        """
+        可能需要递归，因为每次新插入需求会影响很多站点的卡位分配情况
+        :return: bool
+        """
+        brother_customer_id = request[demand_type + "_demand_info"][DemandInfoEnum.brother_customer.name]
+        node = CustomerRequestCombination(customer_id,
+                                          request[RequestInfoEnum.requestID.name],
+                                          demand_type,
+                                          brother_customer_id,
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.volume.name],
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.time_window.name],
+                                          request[demand_type + "_demand_info"][DemandInfoEnum.process_time.name],
+                                          self._vehicleID)
+        d = route_cost.getTravelCost(self._route[node_index_in_route-1].customerID, customer_id)[RouteCostEnum.travel_time.name]
+        vehicle_arrive_time = self._route[node_index_in_route-1].vehicleDepartureTime + timedelta(seconds=d)
+        node.setVehicleArriveTime(vehicle_arrive_time)
+        self.addNode2Route(node, node_index_in_route)
+        if node_index_in_route > 0:
+            self._route[node_index_in_route].setLeftNode(self._route[node_index_in_route - 1])
+            self._route[node_index_in_route - 1].setRightNode(self._route[node_index_in_route])
+        if node_index_in_route < len(self._route) - 1:
+            self._route[node_index_in_route].setRightNode(self._route[node_index_in_route + 1])
+            self._route[node_index_in_route + 1].setLeftNode(self._route[node_index_in_route])
+
+        if request[RequestInfoEnum.requestID.name] not in customers[customer_id].getUnfinishedDemands: # todo 貌似没啥用，考虑删掉
+            customers[customer_id].addNewDemand(request[RequestInfoEnum.requestID.name], request[demand_type + "_demand_info"])
+        self.updateVolume(request[demand_type + "_demand_info"][DemandInfoEnum.volume.name])
+
+        if Configs.constrains[ConstrainEnum.port_resource]:
+            if node.requestID not in customers[node.customerID].getDispatchedRequestSet:
+                customers[node.customerID].getDispatchedRequestSet[node.requestID] = node
+            assert not customers[node.customerID].getDispatchedRequestSet[node.requestID].brotherNode
+            feasibleRearrangePortAssignmentSchedule(customers, customer_id, node)
+        else:
+            # todo 更新后续节点的到达和离开时间
+            leave_time = vehicle_arrive_time + timedelta(seconds=Configs.static_process_time_on_customer +
+                                                                 node.processTime)
+            node.setVehicleDepartureTime(leave_time)
+            if node_index_in_route < len(self._route) - 1:
+                duration = route_cost.getTravelCost(node.customerID,
+                                                    self._route[node_index_in_route + 1].customerID)[RouteCostEnum.travel_time.name]
+                new_arrive_time = leave_time+timedelta(seconds=duration)
+                is_advance_arrive = True
+                if new_arrive_time > self._route[node_index_in_route+1].vehicleArriveTime:
+                    time_delta = (new_arrive_time-self._route[node_index_in_route+1].vehicleArriveTime).seconds
+                    is_advance_arrive = False
+                else:
+                    time_delta = (self._route[node_index_in_route+1].vehicleArriveTime - new_arrive_time).seconds
+                for i in range(node_index_in_route+1, len(self._route)):
+                    if is_advance_arrive:
+                        self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime - timedelta(seconds=time_delta)
+                        self._route[i].vehicleDepartureTime = self._route[i].vehicleArriveTime - timedelta(
+                            seconds=time_delta)
+                    else:
+                        self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime + timedelta(
+                            seconds=time_delta)
+                        self._route[i].vehicleDepartureTime = self._route[i].vehicleArriveTime + timedelta(
+                            seconds=time_delta)
+
+    def delete_node(self, node_index: int):
+        """
+        删除route中已有的节点
+        """
+        del self._route[node_index]
+        if len(self._route) > 1:
+            if node_index == len(self._route):  # 代表要删除的节点位于route末尾
+                self._route[node_index-1].setRightNode(None)
+            else:
+                self._route[node_index-1].setRightNode(self._route[node_index])
+                self._route[node_index].setLeftNode(self._route[node_index-1])
+                duration = route_cost.getTravelCost(self._route[node_index-1].customerID,
+                                                    self._route[node_index].customerID)[RouteCostEnum.travel_time.name]
+                new_arrive_time = self._route[node_index-1].vehicleDepartureTime + timedelta(seconds=duration)
+                is_advance_arrive = False
+                if new_arrive_time >= self._route[node_index].vehicleArriveTime:
+                    time_delta = (new_arrive_time - self._route[node_index].vehicleArriveTime).seconds
+                else:
+                    is_advance_arrive = True
+                    time_delta = (self._route[node_index].vehicleArriveTime - new_arrive_time).seconds
+                for i in range(node_index, len(self._route)):
+                    if is_advance_arrive:
+                        self._route[i].vehicleDepartureTime = self._route[i].vehicleDepartureTime - timedelta(seconds=time_delta)
+                        self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime - timedelta(seconds=time_delta)
+                    else:
+                        self._route[i].vehicleDepartureTime = self._route[i].vehicleDepartureTime + timedelta(
+                            seconds=time_delta)
+                        self._route[i].vehicleArriveTime = self._route[i].vehicleArriveTime + timedelta(
+                            seconds=time_delta)
+
+        else:
+            self._route[0].setLeftNode(None)
+
 
     def resetDepot(self, destination_info, customers):
         """
@@ -417,5 +517,4 @@ class Vehicle(object):
 
 
 if __name__ == "__main__":
-    test = [[] for i in range(5)]
-    print(test)
+    pass
